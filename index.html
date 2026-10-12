@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="Drink Dispenser">
+<meta name="theme-color" content="#1D1D1D">
+<title>Drink Dispenser</title>
+
+<!-- Optional web fonts. Offline (ESP32 access point) the fallbacks below are used automatically. -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400&family=Italiana&family=Raleway:wght@700&display=swap" rel="stylesheet">
+
+<style>
+/* ==========================================================================
+   Design tokens
+   ========================================================================== */
+:root {
+  --bg: #1D1D1D;
+  --cream: #F0E6D3;
+  --gold: #DAA95B;
+  --bronze: #8D7C55;
+  --line: #424242;
+  --red: #E25F63;
+
+  --f-title: 'Italiana', Georgia, 'Times New Roman', serif;
+  --f-head:  'Adam', 'Raleway', 'Helvetica Neue', Arial, sans-serif;
+  --f-card:  'Kannada MN', 'Helvetica Neue', Arial, sans-serif;
+  --f-ui:    Arial, 'Helvetica Neue', sans-serif;
+  --f-clock: 'Inter', -apple-system, 'Helvetica Neue', Arial, sans-serif;
+
+  --glass: linear-gradient(180deg, rgba(141,124,85,.15) 0%, rgba(29,29,29,.005) 83.7%);
+  --glass-shadow: 0 0 30px rgba(0,0,0,.8), inset 0 0 50px #181818;
+}
+
+/* ==========================================================================
+   Base / stage (fixed 1024 x 768 canvas, scaled to fit any screen)
+   ========================================================================== */
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+body { font-family: var(--f-ui); color: var(--cream); -webkit-user-select: none; user-select: none; touch-action: manipulation; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+input, select { font: 12px var(--f-ui); color: var(--cream); -webkit-user-select: text; user-select: text; }
+svg { display: block; }
+.icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+
+#stage { position: absolute; left: 50%; top: 50%; width: 1024px; height: 768px; transform-origin: center; background: var(--bg); overflow: hidden; }
+.abs { position: absolute; }
+
+/* Pages */
+.page { position: absolute; inset: 0; opacity: 0; visibility: hidden; transition: opacity .35s ease, visibility .35s; }
+.page.on { opacity: 1; visibility: visible; }
+
+/* ==========================================================================
+   Top bar (home icon, title, settings gear, wifi, clock)
+   ========================================================================== */
+.bar { position: absolute; left: 0; top: 0; width: 1024px; height: 70px; z-index: 20; opacity: 1; transition: opacity .35s; }
+.bar.hidden { opacity: 0; pointer-events: none; }
+.bar-btn { position: absolute; top: 18px; width: 40px; height: 40px; display: grid; place-items: center; color: var(--cream); }
+.bar-btn .icon { width: 16px; height: 16px; }
+#btnHome  { left: 24px; }
+#btnGear  { left: 851px; }
+#btnGear.active { color: var(--gold); }
+#wifi     { position: absolute; left: 903px; top: 28px; width: 20px; height: 15px; }
+#clock    { position: absolute; left: 948px; top: 27px; font: 400 16px/19px var(--f-clock); }
+#barTitle { position: absolute; left: 71px; top: 26px; font: 300 19px/20px var(--f-head); letter-spacing: .01em; }
+.bar[data-view="home"] #btnHome, .bar[data-view="home"] #barTitle { display: none; }
+
+/* ==========================================================================
+   Splash
+   ========================================================================== */
+#splash { cursor: pointer; }
+#splash .logo { position: absolute; left: 382px; top: 258px; width: 260px; height: 217px; animation: rise 1.2s ease both; }
+#splash h1 { position: absolute; left: calc(50% - 130px); top: 480px; width: 260px; font: 400 40px/47px var(--f-title); text-align: center; animation: rise 1.2s .2s ease both; }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ==========================================================================
+   Home
+   ========================================================================== */
+#welcome { position: absolute; left: 134px; top: 166px; font: 300 25px/27px var(--f-head); letter-spacing: .01em; color: rgba(240,230,211,.5); }
+#home h2 { position: absolute; left: 134px; top: 195px; font: 400 48px/57px var(--f-title); }
+
+.cat { position: absolute; top: 294px; width: 170px; height: 307px; border-radius: 25px; background: var(--glass); box-shadow: var(--glass-shadow); transition: transform .15s; }
+.cat:active { transform: scale(.97); }
+.cat svg.art { position: absolute; left: 45px; top: 105px; width: 80px; height: 80px; fill: none; stroke: var(--bronze); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.cat i { position: absolute; left: 85px; top: 204px; width: 0; height: 35px; border-left: 1px solid rgba(141,124,85,.5); }
+.cat span { position: absolute; left: 0; right: 0; top: 258px; text-align: center; font: 400 16px/19px var(--f-card); }
+
+/* ==========================================================================
+   Drinks menu (cards)
+   ========================================================================== */
+#menuScroll { position: absolute; left: 0; top: 73px; width: 1024px; height: 654px; padding: 30px 56px; display: flex; gap: 17px; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+#menuScroll::-webkit-scrollbar { display: none; }
+#menuEmpty { position: absolute; left: 0; right: 0; top: 340px; text-align: center; font-size: 14px; color: rgba(240,230,211,.55); display: none; }
+
+.card { position: relative; flex: 0 0 215px; height: 594px; border-radius: 25px; background: var(--glass); box-shadow: var(--glass-shadow); scroll-snap-align: start; }
+.card > * { position: absolute; left: 33px; width: 150px; }
+.card .pic { top: 25px; height: 250px; border-radius: 12px; background-size: cover; background-position: center; }
+.card .pic svg { width: 100%; height: 100%; }
+.card h3 { top: 322px; font: 700 18px/22px var(--f-card); }
+.card .meta { top: 348px; font-size: 10px; line-height: 11px; }
+.card hr { top: 383px; border: 0; border-top: 1px solid rgba(141,124,85,.5); }
+.card .ing { top: 409px; width: 140px; }
+.card .gar { top: 440px; width: 140px; }
+.card .org { top: 474px; width: 140px; }
+.card .ing, .card .gar, .card .org { font-size: 10px; line-height: 11px; max-height: 22px; overflow: hidden; }
+.card .want { top: 517px; height: 41px; border-radius: 10px; background: var(--gold); color: var(--bg); box-shadow: 0 4px 4px rgba(0,0,0,.25); font: 700 14px/41px 'Raleway', var(--f-ui); transition: transform .15s; }
+.card .want:active { transform: scale(.96); }
+
+/* ==========================================================================
+   Settings shell: left tabs + panels
+   ========================================================================== */
+#settings .glow { position: absolute; left: -72px; top: 0; width: 327px; height: 768px; background: radial-gradient(50% 50% at 50% 50%, rgba(141,124,85,.15) 44.71%, rgba(29,29,29,.005) 100%); opacity: .5; pointer-events: none; }
+#settings .vline { position: absolute; left: 255px; top: 104px; height: 592px; border-left: 1px solid rgba(141,124,85,.35); }
+.side { position: absolute; left: 0; top: 219px; width: 255px; }
+.tab { display: flex; align-items: center; gap: 19px; width: 255px; height: 44px; margin-bottom: 18.5px; padding-left: 36px; font: 400 12px var(--f-ui); color: var(--cream); text-align: left; }
+.tab.on { color: var(--gold); font-weight: 700; }
+
+.panel { position: absolute; inset: 0; display: none; pointer-events: none; }  /* full-stage layer: let taps reach the tabs underneath */
+.panel.on { display: block; }
+.panel > * { pointer-events: auto; }
+.ph { position: absolute; left: 320px; top: 94px; width: 630px; height: 57px; border-bottom: 1px solid var(--bronze); }
+.ph h2 { padding-top: 14px; font: 700 24px/17px var(--f-ui); }
+.ph .actions { position: absolute; right: 0; top: 0; display: flex; gap: 10px; }
+
+/* Buttons */
+.btn { height: 40px; padding: 0 30px; border-radius: 10px; border: 1px solid var(--line); font: 400 14px/38px var(--f-ui); white-space: nowrap; transition: transform .15s; }
+.btn:active { transform: scale(.96); }
+.btn.gold { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+.btn.outline-gold { border-color: var(--gold); }
+.btn.red { border-color: var(--red); color: var(--red); }
+
+/* Form controls */
+.field { position: absolute; }
+.field > label { display: block; height: 12px; margin-bottom: 7px; font-size: 12px; line-height: 12px; }
+.field input, .select { display: block; width: 100%; height: 40px; border: 1px solid var(--line); border-radius: 10px; background: transparent; }
+.field input { padding: 0 20px; outline: none; }
+.field input::placeholder { color: rgba(240,230,211,.5); }
+.field input:focus, .select:focus-within { border-color: var(--gold); }
+.select { position: relative; }
+.select.abs { position: absolute; }
+.select select { width: 100%; height: 100%; padding: 0 56px 0 20px; border: 0; background: transparent; outline: none; -webkit-appearance: none; appearance: none; }
+.select select:required:invalid { color: rgba(240,230,211,.5); }
+.select option { color: #222; }
+.select::before { content: ""; position: absolute; right: 41px; top: 0; bottom: 0; border-left: 1px solid var(--line); pointer-events: none; }
+.select::after { content: ""; position: absolute; right: 14px; top: 17px; width: 7px; height: 7px; border-right: 1px solid var(--cream); border-bottom: 1px solid var(--cream); transform: rotate(45deg); pointer-events: none; }
+
+.sect { position: absolute; left: 320px; width: 630px; height: 42px; border-bottom: 1px solid var(--bronze); font: 700 14px/14px var(--f-ui); }
+.switch { position: absolute; right: 0; top: -7px; width: 48px; height: 26px; border: 1px solid var(--line); border-radius: 13px; transition: background .2s, border-color .2s; }
+.switch::after { content: ""; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--cream); transition: transform .2s; }
+.switch.on { background: var(--gold); border-color: var(--gold); }
+.switch.on::after { transform: translateX(22px); background: var(--bg); }
+
+/* Lists (bases, drinks, services, chips) */
+.rows { position: absolute; left: 320px; width: 630px; overflow-y: auto; scrollbar-width: none; }
+.rows::-webkit-scrollbar { display: none; }
+.row { position: relative; width: 630px; border: 1px solid var(--line); border-radius: 15px; margin-bottom: 12px; display: flex; align-items: center; }
+.row.base { height: 52px; padding: 0 18px 0 26px; font-size: 12px; justify-content: space-between; }
+.row.drink { height: 68px; padding: 0 18px 0 20px; gap: 19px; margin-bottom: 10px; }
+.row.drink .thumb { flex: 0 0 48px; height: 48px; border-radius: 10px; overflow: hidden; background-size: cover; background-position: center; background-color: rgba(141,124,85,.12); }
+.row.drink .thumb svg { width: 100%; height: 100%; }
+.row.drink .info { flex: 1; }
+.row.drink b { display: block; font: 700 16px/18px var(--f-ui); color: var(--bronze); margin-bottom: 8px; }
+.row.drink small { font-size: 10px; }
+.row.service { height: 64px; padding: 0 20px 0 26px; justify-content: space-between; }
+.row.service b { display: block; font-size: 14px; margin-bottom: 6px; }
+.row.service small { font-size: 11px; color: rgba(240,230,211,.6); }
+.ico-btn { width: 36px; height: 36px; display: grid; place-items: center; color: var(--cream); }
+.ico-btn.danger:active { color: var(--red); }
+.chips { display: grid; grid-template-columns: 310px 310px; gap: 10px; align-content: start; }
+.chip { height: 40px; border: 1px solid var(--line); border-radius: 10px; padding: 0 8px 0 20px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; }
+
+/* Tanks */
+.tank-n { position: absolute; font: 400 16px/40px var(--f-ui); width: 30px; text-align: center; }
+
+/* About */
+.about-text { position: absolute; left: 320px; top: 176px; width: 630px; font-size: 12px; line-height: 18px; text-align: justify; letter-spacing: .01em; }
+.info-table { position: absolute; left: 320px; top: 428px; width: 630px; font-size: 12px; line-height: 18px; display: grid; grid-template-columns: 150px 1fr; }
+.info-table dt { color: rgba(240,230,211,.65); }
+
+/* ==========================================================================
+   Toast + modal
+   ========================================================================== */
+#toast { position: absolute; left: 50%; bottom: 40px; transform: translate(-50%, 20px); padding: 12px 24px; border-radius: 22px; background: rgba(240,230,211,.95); color: var(--bg); font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 60; white-space: nowrap; }
+#toast.on { opacity: 1; transform: translate(-50%, 0); }
+#modal { position: absolute; inset: 0; z-index: 50; display: none; place-items: center; background: rgba(0,0,0,.6); }
+#modal.on { display: grid; }
+#modal .box { width: 380px; padding: 28px; border: 1px solid var(--bronze); border-radius: 20px; background: var(--bg); text-align: center; }
+#modal p { font-size: 14px; line-height: 21px; margin-bottom: 24px; }
+#modal .btns { display: flex; gap: 10px; justify-content: center; }
+</style>
+</head>
+
+<body>
+<div id="stage">
+
+  <!-- Icon sprite -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <symbol id="i-home" viewBox="0 0 20 20"><path d="M3 9.5 10 3l7 6.5V17h-5v-4H8v4H3z"/></symbol>
+      <symbol id="i-wifi" viewBox="0 0 20 20"><path d="M2 7.5a11.5 11.5 0 0 1 16 0M5 10.8a7 7 0 0 1 10 0M8 14a3 3 0 0 1 4 0"/><circle cx="10" cy="17" r=".6" fill="currentColor"/></symbol>
+      <symbol id="i-gear" viewBox="0 0 20 20"><circle cx="10" cy="10" r="2.6"/><circle cx="10" cy="10" r="5.6"/><path d="M10 2v2.4M10 15.6V18M2 10h2.4M15.6 10H18M4.3 4.3 6 6M14 14l1.7 1.7M15.7 4.3 14 6M6 14l-1.7 1.7"/></symbol>
+      <symbol id="i-general" viewBox="0 0 20 20"><path d="M3 5h5M12 5h5M3 10h8M15 10h2M3 15h2M9 15h8"/><circle cx="10" cy="5" r="2"/><circle cx="13" cy="10" r="2"/><circle cx="7" cy="15" r="2"/></symbol>
+      <symbol id="i-base" viewBox="0 0 20 20"><path d="M8 2h4M9 2v4L7 9v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V9l-2-3V2M7 12h6"/></symbol>
+      <symbol id="i-drinks" viewBox="0 0 20 20"><path d="M3 3h14l-7 8zM10 11v6M6 17h8"/></symbol>
+      <symbol id="i-tanks" viewBox="0 0 20 20"><ellipse cx="10" cy="4.5" rx="6" ry="2"/><path d="M4 4.5v11c0 1.1 2.7 2 6 2s6-.9 6-2v-11M4 10c0 1.1 2.7 2 6 2s6-.9 6-2"/></symbol>
+      <symbol id="i-service" viewBox="0 0 20 20"><path d="M13.5 3a3.6 3.6 0 0 0-3.3 4.8L3.6 14.4a1.6 1.6 0 0 0 2.2 2.2l6.6-6.6A3.6 3.6 0 0 0 17 6.4l-2.3 2.3-2-.5-.5-2z"/></symbol>
+      <symbol id="i-about" viewBox="0 0 20 20"><circle cx="10" cy="10" r="7.5"/><path d="M10 9v5"/><circle cx="10" cy="6.4" r=".5" fill="currentColor"/></symbol>
+      <symbol id="i-trash" viewBox="0 0 20 20"><path d="M4 6h12M8 6V4h4v2M6 6l.7 10h6.6L14 6M8.5 9v5M11.5 9v5"/></symbol>
+      <symbol id="i-edit" viewBox="0 0 20 20"><path d="M4 16l1-4 8-8 3 3-8 8zM11.5 5.5l3 3"/></symbol>
+      <symbol id="i-x" viewBox="0 0 20 20"><path d="M6 6l8 8M14 6l-8 8"/></symbol>
+    </defs>
+  </svg>
+
+  <!-- ===================== Top bar ===================== -->
+  <header class="bar hidden" id="bar" data-view="splash">
+    <button class="bar-btn" id="btnHome" aria-label="Home"><svg class="icon"><use href="#i-home"/></svg></button>
+    <div id="barTitle">Settings</div>
+    <button class="bar-btn" id="btnGear" aria-label="Settings"><svg class="icon"><use href="#i-gear"/></svg></button>
+    <svg class="icon" id="wifi"><use href="#i-wifi"/></svg>
+    <div id="clock">--:--</div>
+  </header>
+
+  <!-- ===================== 1) Splash ===================== -->
+  <section class="page on" id="splash">
+    <svg class="logo" viewBox="0 0 260 217" fill="none" stroke="#8D7C55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M40 52h180L130 150z"/>
+      <path d="M72 82h116"/>
+      <path d="M130 150v52M88 204h84"/>
+      <path d="M176 18 120 80"/><circle cx="170" cy="24" r="8"/>
+      <path d="M80 20c0 8-6 10-6 16a6 6 0 0 0 12 0c0-6-6-8-6-16z" stroke-width="1.5"/>
+    </svg>
+    <h1>Drink Dispenser</h1>
+  </section>
+
+  <!-- ===================== 2) Home ===================== -->
+  <section class="page" id="home">
+    <div id="welcome">Welcome, Milad!</div>
+    <h2>Choose a Drink</h2>
+
+    <button class="cat" style="left:134px" data-type="Cocktail">
+      <svg class="art" viewBox="0 0 80 80"><path d="M14 18h52L40 46zM40 46v20M26 68h28M52 8 38 24"/><circle cx="52" cy="8" r="3.5"/></svg>
+      <i></i><span>Cocktails</span>
+    </button>
+    <button class="cat" style="left:329px" data-type="Mocktail">
+      <svg class="art" viewBox="0 0 80 80"><path d="M24 20l4 46h24l4-46zM27 36h26M48 6 42 38"/><circle cx="56" cy="20" r="7"/></svg>
+      <i></i><span>Mocktails</span>
+    </button>
+    <button class="cat" style="left:524px" data-type="Shooter">
+      <svg class="art" viewBox="0 0 80 80"><path d="M26 22h28l-4 40H30zM28 36h24"/></svg>
+      <i></i><span>Shooters</span>
+    </button>
+    <button class="cat" style="left:719px" data-type="Quick Mix">
+      <svg class="art" viewBox="0 0 80 80"><path d="M30 28h20l4 38H26zM33 16h14v12H33zM36 10h8v6h-8zM28 46h24"/></svg>
+      <i></i><span>Quick Mix</span>
+    </button>
+  </section>
+
+  <!-- ===================== 3) Drinks menu ===================== -->
+  <section class="page" id="menu">
+    <div id="menuScroll"></div>
+    <div id="menuEmpty">No drinks here yet &mdash; add one in Settings &rsaquo; Drinks.</div>
+  </section>
+
+  <!-- ===================== 4) Settings ===================== -->
+  <section class="page" id="settings">
+    <div class="glow"></div>
+    <div class="vline"></div>
+
+    <nav class="side">
+      <button class="tab" data-tab="general"><svg class="icon"><use href="#i-general"/></svg><span>General</span></button>
+      <button class="tab" data-tab="base"><svg class="icon"><use href="#i-base"/></svg><span>Base</span></button>
+      <button class="tab" data-tab="drinks"><svg class="icon"><use href="#i-drinks"/></svg><span>Drinks</span></button>
+      <button class="tab" data-tab="tanks"><svg class="icon"><use href="#i-tanks"/></svg><span>Tanks Settings</span></button>
+      <button class="tab" data-tab="services"><svg class="icon"><use href="#i-service"/></svg><span>Services</span></button>
+      <button class="tab" data-tab="about"><svg class="icon"><use href="#i-about"/></svg><span>About</span></button>
+    </nav>
+
+    <!-- ---- General ---- -->
+    <div class="panel" id="tab-general">
+      <div class="ph"><h2>General</h2>
+        <div class="actions"><button class="btn" id="genCancel">Cancel</button><button class="btn gold" id="genSave">Save</button></div>
+      </div>
+      <div class="field" style="left:320px;top:176px;width:211px"><label>Device Name</label><input id="g-device" placeholder="for example: Bartender" autocomplete="off"></div>
+      <div class="field" style="left:541px;top:176px;width:211px"><label>Profile Name</label><input id="g-profile" autocomplete="off"></div>
+      <div class="field" style="left:762px;top:176px;width:188px"><label>Language</label><div class="select"><select id="g-language"></select></div></div>
+      <div class="field" style="left:320px;top:253px;width:211px"><label>Measurement Unit</label><div class="select"><select id="g-unit"></select></div></div>
+      <div class="field" style="left:541px;top:253px;width:211px"><label>Standby Time</label><div class="select"><select id="g-standby"></select></div></div>
+      <div class="field" style="left:762px;top:253px;width:188px"><label>OLED Mode</label><div class="select"><select id="g-oled"></select></div></div>
+      <div class="sect" style="top:360px">Child Lock<button class="switch" id="g-lock" role="switch" aria-label="Child Lock"></button></div>
+    </div>
+
+    <!-- ---- Base ---- -->
+    <div class="panel" id="tab-base">
+      <div class="ph"><h2>Add Base</h2></div>
+      <div class="field" style="left:320px;top:172px;width:220px"><input id="b-name" placeholder="Base name" autocomplete="off"></div>
+      <div class="field" style="left:560px;top:172px;width:220px"><div class="select"><select id="b-cat" required></select></div></div>
+      <button class="btn gold abs" id="b-add" style="left:800px;top:172px;width:150px">Add to list</button>
+      <div class="sect" style="top:261px;height:42px;border-bottom:1px solid var(--bronze)">Base List</div>
+      <div class="rows" id="b-list" style="top:325px;height:372px"></div>
+    </div>
+
+    <!-- ---- Drinks list ---- -->
+    <div class="panel" id="tab-drinks">
+      <div class="ph"><h2>Drinks List</h2>
+        <div class="actions"><button class="btn outline-gold" id="d-new">Add Drink</button></div>
+      </div>
+      <div class="rows" id="d-list" style="top:173px;height:524px"></div>
+    </div>
+
+    <!-- ---- Add / Edit drink ---- -->
+    <div class="panel" id="tab-adddrink">
+      <div class="ph"><h2 id="dfTitle">Add Drink</h2>
+        <div class="actions"><button class="btn" id="dfCancel">Cancel</button><button class="btn gold" id="dfSave">Save</button></div>
+      </div>
+      <div class="field" style="left:320px;top:176px;width:400px"><label>Drink Name</label><input id="df-name" placeholder="for example: Martini" autocomplete="off"></div>
+      <div class="field" style="left:730px;top:176px;width:220px"><label>Drink Type</label><div class="select"><select id="df-type" required></select></div></div>
+
+      <div class="field" style="left:320px;top:254px;width:167px"><label>Picture (150x250px)</label><button class="btn outline-gold" id="df-pic" style="width:167px;padding:0 10px;overflow:hidden;text-overflow:ellipsis;font-size:12px">Select Picture</button></div>
+      <input type="file" id="df-file" accept="image/*" hidden>
+      <div class="field" style="left:497px;top:254px;width:220px"><label>Potency</label><div class="select"><select id="df-potency" required></select></div></div>
+      <div class="field" style="left:730px;top:254px;width:220px"><label>Alcohol Volume (%)</label><input id="df-abv" type="number" inputmode="decimal" min="0" max="100" placeholder="for example: 20"></div>
+
+      <div class="field" style="left:320px;top:332px;width:220px"><label>Ingredients</label><div class="select"><select id="df-ing" required></select></div></div>
+      <div class="field" style="left:551px;top:332px;width:140px"><label>Amount (ml)</label><input id="df-ml" type="number" inputmode="decimal" min="1" placeholder="for example: 30"></div>
+      <div class="field" style="left:702px;top:332px;width:119px"><label>Pour Order</label><div class="select"><select id="df-po" required></select></div></div>
+      <button class="btn gold abs" id="df-add" style="left:831px;top:350px;width:119px;padding:0">Add</button>
+
+      <div class="abs" style="left:320px;top:410px;width:630px;border-top:1px solid var(--line)"></div>
+      <div class="rows chips" id="df-chips" style="top:420px;height:90px"></div>
+      <div class="abs" style="left:320px;top:520px;width:630px;border-top:1px solid var(--line)"></div>
+
+      <div class="field" style="left:320px;top:540px;width:451px"><label>Origins</label><input id="df-origin" placeholder="for example: United States" autocomplete="off"></div>
+      <div class="field" style="left:781px;top:540px;width:169px"><label>Release Date</label><input id="df-release" placeholder="for example: 1989" autocomplete="off"></div>
+      <div class="field" style="left:320px;top:618px;width:451px"><label>Garnish</label><input id="df-garnish" placeholder="for example: Lemon Slice" autocomplete="off"></div>
+      <div class="field" style="left:781px;top:618px;width:169px"><label>Cup Size</label><div class="select"><select id="df-cup" required></select></div></div>
+    </div>
+
+    <!-- ---- Tanks ---- -->
+    <div class="panel" id="tab-tanks">
+      <div class="ph"><h2>Tanks Settings</h2>
+        <div class="actions"><button class="btn" id="tkCancel">Cancel</button><button class="btn gold" id="tkSave">Save</button></div>
+      </div>
+      <div id="tk-grid"></div>
+      <button class="btn red abs" id="tk-reset" style="left:360px;top:407px;width:590px;padding:0">Reset all tanks</button>
+    </div>
+
+    <!-- ---- Services ---- -->
+    <div class="panel" id="tab-services">
+      <div class="ph"><h2>Service</h2></div>
+      <div class="rows" style="top:176px;height:300px">
+        <div class="row service"><div><b>Clean / Flush Cycle</b><small>Fill reservoirs with water and run every pump.</small></div><button class="btn outline-gold" data-service="flush">Start</button></div>
+        <div class="row service"><div><b>Prime Pumps</b><small>Fill the tubing before first use or after a refill.</small></div><button class="btn outline-gold" data-service="prime">Start</button></div>
+      </div>
+    </div>
+
+    <!-- ---- About ---- -->
+    <div class="panel" id="tab-about">
+      <div class="ph"><h2>About</h2></div>
+      <p class="about-text">An automated, precision beverage dispensing and mixing platform engineered to deliver flavor consistency, rapid service, and streamlined inventory management. Featuring a multi-channel fluid handling system, precise tank calibration, and flexible recipe formulation built on core base liquids, the platform guarantees exact pour ratios with every cycle. Designed with a modular fluidic architecture and automated maintenance routines (Service Mode), it ensures optimal hygiene standards and long-term hardware reliability under continuous use.</p>
+      <div class="sect" style="top:360px">System Information</div>
+      <dl class="info-table" id="aboutInfo"></dl>
+    </div>
+  </section>
+
+  <div id="toast"></div>
+  <div id="modal"><div class="box"><p id="modalMsg"></p><div class="btns"><button class="btn" id="modalNo">Cancel</button><button class="btn gold" id="modalYes">Confirm</button></div></div></div>
+</div>
+
+<script>
+(() => {
+'use strict';
+
+/* ==========================================================================
+   Helpers
+   ========================================================================== */
+const $  = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const pad = n => String(n).padStart(2, '0');
+
+/* ==========================================================================
+   Device bridge – replace the body with real calls to the ESP32 firmware
+   e.g. return fetch('/api/' + action, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+   ========================================================================== */
+const device = {
+  async send(action, payload = {}) { console.info('[device]', action, payload); }
+};
+
+/* About page values (edit freely) */
+const SYSTEM_INFO = { software: '1.0.0', firmware: '1.0.0', hardware: 'Rev A', serial: '—' };
+
+/* ==========================================================================
+   State (persisted in the browser)
+   ========================================================================== */
+const STORE_KEY = 'drinkdispenser.v1';
+const TYPES   = ['Cocktail', 'Mocktail', 'Shooter', 'Quick Mix'];
+const CATS    = ['Base Spirit', 'Soft Drinks', 'Mixers', 'Syrups'];
+const POTENCY = ['Light', 'Medium', 'Strong'];
+const CUPS    = [150, 200, 250, 300, 350, 400];
+
+const DEFAULTS = {
+  settings: { device: '', profile: 'Milad', language: 'English', unit: 'ml', standby: '3 hours', oled: 'On', childLock: false },
+  bases: [
+    ['Vodka', 'Base Spirit'], ['Cognac', 'Base Spirit'], ['White Rum', 'Base Spirit'],
+    ['Soda', 'Soft Drinks'], ['Cola', 'Soft Drinks'],
+    ['Cranberry Juice', 'Mixers'], ['Orange Juice', 'Mixers'], ['Pineapple Juice', 'Mixers'],
+    ['Lemon Juice', 'Mixers'], ['Lime Juice', 'Mixers'], ['Peach Juice', 'Mixers'],
+    ['Triple Sec', 'Syrups'], ['Grenadine', 'Syrups'], ['Sugar', 'Syrups']
+  ].map(([name, cat]) => ({ name, cat })),
+  tanks: ['Vodka', 'Cognac', 'Soda', 'Cranberry Juice', 'Pineapple Juice', 'Lemon Juice', 'Peach Juice', 'Triple Sec'],
+  drinks: [
+    { id: 'd1', name: 'Sex.on.the.Beach', type: 'Cocktail', potency: 'Medium', abv: 13, color: '#E8864A', img: null,
+      ingredients: [{ base: 'Vodka', ml: 40, order: 1 }, { base: 'Grenadine', ml: 15, order: 2 }, { base: 'Orange Juice', ml: 90, order: 3 }],
+      origin: 'United States, around 1970', garnish: 'Orange Slice, Cherry, Mint Leaves', release: '1970', cup: 250 },
+    { id: 'd2', name: 'Mojito', type: 'Cocktail', potency: 'Light', abv: 9, color: '#6FAF72', img: null,
+      ingredients: [{ base: 'White Rum', ml: 50, order: 1 }, { base: 'Sugar', ml: 10, order: 2 }, { base: 'Lime Juice', ml: 25, order: 3 }, { base: 'Soda', ml: 100, order: 4 }],
+      origin: 'Cuba, 1930s', garnish: 'Mint Leaves, Lemon Slice', release: '1930', cup: 300 },
+    { id: 'd3', name: 'Cosmopolitan', type: 'Cocktail', potency: 'Medium', abv: 20, color: '#C94F6D', img: null,
+      ingredients: [{ base: 'Vodka', ml: 40, order: 1 }, { base: 'Lime Juice', ml: 15, order: 2 }, { base: 'Cranberry Juice', ml: 30, order: 3 }],
+      origin: 'United States, 1958', garnish: 'Lemon Skin', release: '1958', cup: 200 },
+    { id: 'd4', name: 'Cuba Libre', type: 'Cocktail', potency: 'Light', abv: 9, color: '#7B4A2E', img: null,
+      ingredients: [{ base: 'White Rum', ml: 50, order: 1 }, { base: 'Lime Juice', ml: 10, order: 2 }, { base: 'Cola', ml: 120, order: 3 }],
+      origin: 'Cuba, around 1900', garnish: 'Lemon Slice', release: '1900', cup: 300 }
+  ]
+};
+
+const clone = o => JSON.parse(JSON.stringify(o));
+let state = (() => {
+  try { const saved = JSON.parse(localStorage.getItem(STORE_KEY)); if (saved && saved.drinks) return { ...clone(DEFAULTS), ...saved, settings: { ...DEFAULTS.settings, ...saved.settings } }; } catch (e) {}
+  return clone(DEFAULTS);
+})();
+const persist = () => { try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {} };
+
+/* ==========================================================================
+   UI utilities: stage scaling, clock, toast, confirm
+   ========================================================================== */
+const stage = $('#stage');
+function fit() {
+  const s = Math.min(innerWidth / 1024, innerHeight / 768);
+  stage.style.transform = `translate(-50%,-50%) scale(${s})`;
+}
+addEventListener('resize', fit); fit();
+document.addEventListener('gesturestart', e => e.preventDefault());
+
+function tickClock() { const d = new Date(); $('#clock').textContent = `${pad(d.getHours())}:${pad(d.getMinutes())}`; }
+tickClock(); setInterval(tickClock, 1000);
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+}
+function confirmBox(msg, okLabel = 'Confirm') {
+  return new Promise(res => {
+    $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel; $('#modal').classList.add('on');
+    const done = v => { $('#modal').classList.remove('on'); $('#modalYes').onclick = $('#modalNo').onclick = null; res(v); };
+    $('#modalYes').onclick = () => done(true); $('#modalNo').onclick = () => done(false);
+  });
+}
+function fill(sel, items, { placeholder, value } = {}) {
+  sel.innerHTML = (placeholder ? `<option value="" disabled selected hidden>${placeholder}</option>` : '') +
+    items.map(i => `<option value="${esc(i)}">${esc(i)}</option>`).join('');
+  if (value !== undefined && value !== null) sel.value = value;
+}
+
+/* ==========================================================================
+   Drink artwork (used when no picture was uploaded)
+   ========================================================================== */
+const hashColor = s => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) % 360; return `hsl(${h} 55% 55%)`; };
+function drinkArt(d) {
+  const c = d.color || hashColor(d.name);
+  const glass = {
+    'Cocktail':  `<path d="M32 72h86L75 138z" fill="${c}" fill-opacity=".8"/><path d="M20 60h110L75 140zM75 140v66M48 210h54"/><path d="M118 30 96 60"/><circle cx="121" cy="26" r="7"/>`,
+    'Mocktail':  `<path d="M45 90l5 115h50l5-115z" fill="${c}" fill-opacity=".8"/><path d="M42 50l8 155h50l8-155zM92 18 80 130"/><circle cx="112" cy="52" r="9"/>`,
+    'Shooter':   `<path d="M54 125h42l-3 65H57z" fill="${c}" fill-opacity=".8"/><path d="M50 100h50l-6 90H56z"/>`,
+    'Quick Mix': `<path d="M46 130h58l4 75H42z" fill="${c}" fill-opacity=".8"/><path d="M48 85h54l6 120H42zM56 55h38v30H56zM67 38h16v17H67z"/>`
+  }[d.type] || '';
+  return `<svg viewBox="0 0 150 250" fill="none" stroke="#8D7C55" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${glass}</svg>`;
+}
+const picHTML = d => d.img ? '' : drinkArt(d);
+const picStyle = d => d.img ? `style="background-image:url('${d.img}')"` : '';
+
+/* ==========================================================================
+   Router
+   ========================================================================== */
+let view = 'splash';
+function go(name) {
+  view = name;
+  $$('.page').forEach(p => p.classList.toggle('on', p.id === name));
+  const bar = $('#bar');
+  bar.dataset.view = name;
+  bar.classList.toggle('hidden', name === 'splash');
+  $('#btnGear').classList.toggle('active', name === 'settings');
+}
+
+/* Splash -> Home */
+$('#splash').addEventListener('click', () => go('home'));
+
+/* Top bar */
+$('#btnHome').addEventListener('click', () => go('home'));
+$('#btnGear').addEventListener('click', () => openSettings('general'));
+
+/* Home cards -> menu */
+$$('.cat').forEach(b => b.addEventListener('click', () => openMenu(b.dataset.type)));
+
+function renderWelcome() {
+  const name = (state.settings.profile || '').trim().replace(/!+$/, '');
+  $('#welcome').textContent = name ? `Welcome, ${name}!` : 'Welcome!';
+}
+
+/* ==========================================================================
+   Drinks menu
+   ========================================================================== */
+const MENU_TITLES = { 'Cocktail': 'Cocktails Menu', 'Mocktail': 'Mocktails Menu', 'Shooter': 'Shooters Menu', 'Quick Mix': 'Quick Mix Menu' };
+
+function openMenu(type) {
+  $('#barTitle').textContent = MENU_TITLES[type] || 'Menu';
+  const list = state.drinks.filter(d => d.type === type);
+  $('#menuEmpty').style.display = list.length ? 'none' : 'block';
+  $('#menuScroll').innerHTML = list.map(d => {
+    const meta = [d.abv !== '' && d.abv != null ? `${d.abv}%` : '', d.potency ? `(${d.potency})` : ''].join(' ').trim();
+    return `<article class="card">
+      <div class="pic" ${picStyle(d)}>${picHTML(d)}</div>
+      <h3>${esc(d.name)}</h3>
+      <div class="meta">${esc(meta)}</div>
+      <hr>
+      <div class="ing">${esc(d.ingredients.map(i => i.base).join(', '))}</div>
+      <div class="gar">${d.garnish ? 'Garnish: ' + esc(d.garnish) : ''}</div>
+      <div class="org">${esc(d.origin || '')}</div>
+      <button class="want" data-id="${d.id}">I Want This!</button>
+    </article>`;
+  }).join('');
+  $('#menuScroll').scrollLeft = 0;
+  go('menu');
+}
+$('#menuScroll').addEventListener('click', e => {
+  const b = e.target.closest('.want'); if (!b) return;
+  const d = state.drinks.find(x => x.id === b.dataset.id); if (!d) return;
+  device.send('order', { id: d.id, name: d.name, ingredients: d.ingredients, cup: d.cup });
+  toast(`Preparing ${d.name}…`);
+});
+
+/* ==========================================================================
+   Settings: tab switching
+   ========================================================================== */
+let currentTab = 'general';
+function openSettings(tab = 'general') { showTab(tab); $('#barTitle').textContent = 'Settings'; go('settings'); }
+
+function showTab(tab) {
+  currentTab = tab;
+  const highlight = tab === 'adddrink' ? 'drinks' : tab;
+  $$('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === highlight));
+  $$('.panel').forEach(p => p.classList.toggle('on', p.id === 'tab-' + tab));
+  ({ general: loadGeneral, base: renderBases, drinks: renderDrinks, tanks: renderTanks, about: renderAbout }[tab] || (() => {}))();
+}
+$$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+
+/* ==========================================================================
+   General
+   ========================================================================== */
+const G = { device: $('#g-device'), profile: $('#g-profile'), language: $('#g-language'), unit: $('#g-unit'), standby: $('#g-standby'), oled: $('#g-oled'), lock: $('#g-lock') };
+fill(G.language, ['English']);
+fill(G.unit, ['ml', 'oz']);
+fill(G.standby, ['15 minutes', '30 minutes', '1 hour', '3 hours', '6 hours', 'Never']);
+fill(G.oled, ['On', 'Off', 'Auto']);
+
+function loadGeneral() {
+  const s = state.settings;
+  G.device.value = s.device; G.profile.value = s.profile;
+  G.language.value = s.language; G.unit.value = s.unit; G.standby.value = s.standby; G.oled.value = s.oled;
+  G.lock.classList.toggle('on', !!s.childLock); G.lock.setAttribute('aria-checked', !!s.childLock);
+}
+G.lock.addEventListener('click', () => { G.lock.classList.toggle('on'); G.lock.setAttribute('aria-checked', G.lock.classList.contains('on')); });
+$('#genCancel').addEventListener('click', () => { loadGeneral(); toast('Changes discarded'); });
+$('#genSave').addEventListener('click', () => {
+  state.settings = {
+    device: G.device.value.trim(), profile: G.profile.value.trim(), language: G.language.value,
+    unit: G.unit.value, standby: G.standby.value, oled: G.oled.value, childLock: G.lock.classList.contains('on')
+  };
+  persist(); renderWelcome(); device.send('settings', state.settings); toast('Settings saved');
+});
+
+/* ==========================================================================
+   Base list
+   ========================================================================== */
+fill($('#b-cat'), CATS, { placeholder: 'Select' });
+
+const baseInUse = name => state.tanks.includes(name) || state.drinks.some(d => d.ingredients.some(i => i.base === name));
+
+function renderBases() {
+  $('#b-list').innerHTML = state.bases.map((b, i) =>
+    `<div class="row base"><span>${esc(b.name)} / ${esc(b.cat)}</span>
+       <button class="ico-btn danger" data-i="${i}" aria-label="Delete"><svg class="icon"><use href="#i-trash"/></svg></button></div>`).join('');
+}
+$('#b-add').addEventListener('click', () => {
+  const name = $('#b-name').value.trim(), cat = $('#b-cat').value;
+  if (!name || !cat) return toast('Enter a base name and choose a category');
+  if (state.bases.some(b => b.name.toLowerCase() === name.toLowerCase())) return toast('This base already exists');
+  state.bases.push({ name, cat }); persist(); renderBases();
+  $('#b-name').value = ''; $('#b-cat').selectedIndex = 0; toast('Base added');
+  $('#b-list').scrollTop = $('#b-list').scrollHeight;
+});
+$('#b-list').addEventListener('click', async e => {
+  const btn = e.target.closest('button'); if (!btn) return;
+  const b = state.bases[+btn.dataset.i];
+  if (baseInUse(b.name)) return toast(`"${b.name}" is used by a tank or a recipe`);
+  if (await confirmBox(`Delete "${b.name}" from the list?`, 'Delete')) { state.bases.splice(+btn.dataset.i, 1); persist(); renderBases(); }
+});
+
+/* ==========================================================================
+   Drinks list
+   ========================================================================== */
+function renderDrinks() {
+  $('#d-list').innerHTML = state.drinks.map(d => {
+    const meta = [d.abv !== '' && d.abv != null ? `${d.abv}%` : '', d.potency ? `(${d.potency})` : ''].join(' ').trim();
+    return `<div class="row drink">
+      <div class="thumb" ${picStyle(d)}>${picHTML(d)}</div>
+      <div class="info"><b>${esc(d.name)}</b><small>${esc(meta)}</small></div>
+      <button class="ico-btn" data-edit="${d.id}" aria-label="Edit"><svg class="icon"><use href="#i-edit"/></svg></button>
+      <button class="ico-btn danger" data-del="${d.id}" aria-label="Delete"><svg class="icon"><use href="#i-trash"/></svg></button>
+    </div>`;
+  }).join('');
+}
+$('#d-new').addEventListener('click', () => openDrinkForm());
+$('#d-list').addEventListener('click', async e => {
+  const edit = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
+  if (edit) return openDrinkForm(edit.dataset.edit);
+  if (del) {
+    const d = state.drinks.find(x => x.id === del.dataset.del);
+    if (d && await confirmBox(`Delete "${d.name}"?`, 'Delete')) { state.drinks = state.drinks.filter(x => x !== d); persist(); renderDrinks(); }
+  }
+});
+
+/* ==========================================================================
+   Add / Edit drink
+   ========================================================================== */
+const F = {
+  name: $('#df-name'), type: $('#df-type'), potency: $('#df-potency'), abv: $('#df-abv'), ing: $('#df-ing'), ml: $('#df-ml'),
+  po: $('#df-po'), origin: $('#df-origin'), release: $('#df-release'), garnish: $('#df-garnish'), cup: $('#df-cup'), file: $('#df-file'), pic: $('#df-pic')
+};
+let draft = null;
+
+function openDrinkForm(id) {
+  const src = id ? state.drinks.find(d => d.id === id) : null;
+  draft = src ? clone(src) : { id: 'd' + Date.now(), ingredients: [], img: null };
+  $('#dfTitle').textContent = src ? 'Edit Drink' : 'Add Drink';
+
+  fill(F.type, TYPES, { placeholder: 'Select', value: src ? src.type : undefined });
+  fill(F.potency, POTENCY, { placeholder: 'Select', value: src ? src.potency : undefined });
+  fill(F.ing, state.bases.map(b => b.name), { placeholder: 'Select' });
+  fill(F.po, [1, 2, 3, 4, 5, 6, 7, 8], { placeholder: 'Select' });
+  fill(F.cup, CUPS.map(c => c + ' ml'), { placeholder: 'Select', value: src && src.cup ? src.cup + ' ml' : undefined });
+
+  F.name.value = src ? src.name : '';
+  F.abv.value = src && src.abv != null ? src.abv : '';
+  F.ml.value = '';
+  F.origin.value = src ? src.origin || '' : '';
+  F.release.value = src ? src.release || '' : '';
+  F.garnish.value = src ? src.garnish || '' : '';
+  F.pic.textContent = draft.img ? 'Picture selected' : 'Select Picture';
+  F.file.value = '';
+  renderChips();
+  showTab('adddrink');
+}
+
+function renderChips() {
+  $('#df-chips').innerHTML = draft.ingredients.map((i, n) =>
+    `<div class="chip"><span>${esc(i.base)} | ${i.ml}ml | PO: ${i.order}</span>
+       <button class="ico-btn" data-n="${n}" aria-label="Remove"><svg class="icon"><use href="#i-x"/></svg></button></div>`).join('');
+}
+$('#df-add').addEventListener('click', () => {
+  const base = F.ing.value, ml = parseFloat(F.ml.value), order = parseInt(F.po.value, 10);
+  if (!base || !(ml > 0) || !order) return toast('Choose an ingredient, amount and pour order');
+  draft.ingredients = draft.ingredients.filter(i => i.base !== base);
+  draft.ingredients.push({ base, ml, order });
+  renderChips(); F.ing.selectedIndex = 0; F.po.selectedIndex = 0; F.ml.value = '';
+});
+$('#df-chips').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  draft.ingredients.splice(+b.dataset.n, 1); renderChips();
+});
+
+/* Picture: resized to 150x250 so it stays small */
+F.pic.addEventListener('click', () => F.file.click());
+F.file.addEventListener('change', () => {
+  const file = F.file.files[0]; if (!file) return;
+  const img = new Image(), url = URL.createObjectURL(file);
+  img.onload = () => {
+    const c = document.createElement('canvas'); c.width = 150; c.height = 250;
+    const ctx = c.getContext('2d'), r = Math.max(150 / img.width, 250 / img.height);
+    ctx.drawImage(img, (150 - img.width * r) / 2, (250 - img.height * r) / 2, img.width * r, img.height * r);
+    draft.img = c.toDataURL('image/jpeg', .82); F.pic.textContent = file.name; URL.revokeObjectURL(url);
+  };
+  img.src = url;
+});
+
+$('#dfCancel').addEventListener('click', () => showTab('drinks'));
+$('#dfSave').addEventListener('click', () => {
+  const name = F.name.value.trim();
+  if (!name) return toast('Enter a drink name');
+  if (!F.type.value) return toast('Choose a drink type');
+  if (!draft.ingredients.length) return toast('Add at least one ingredient');
+  const drink = {
+    ...draft, name, type: F.type.value, potency: F.potency.value || '', abv: F.abv.value === '' ? '' : +F.abv.value,
+    origin: F.origin.value.trim(), release: F.release.value.trim(), garnish: F.garnish.value.trim(),
+    cup: F.cup.value ? parseInt(F.cup.value, 10) : null,
+    ingredients: [...draft.ingredients].sort((a, b) => a.order - b.order)
+  };
+  const i = state.drinks.findIndex(d => d.id === drink.id);
+  i >= 0 ? state.drinks[i] = drink : state.drinks.push(drink);
+  persist(); device.send('recipe', drink); toast('Drink saved'); showTab('drinks');
+});
+
+/* ==========================================================================
+   Tanks
+   ========================================================================== */
+function renderTanks() {
+  const names = state.bases.map(b => b.name);
+  $('#tk-grid').innerHTML = state.tanks.map((t, i) => {
+    const col = i < 4 ? 0 : 1, row = i % 4;
+    const x = col ? 700 : 360, nx = col ? 660 : 320, y = 167 + row * 60;
+    return `<span class="tank-n" style="left:${nx - 10}px;top:${y}px">${i + 1}</span>
+      <div class="select abs" style="left:${x}px;top:${y}px;width:250px"><select data-tank="${i}">
+        ${names.map(n => `<option ${n === t ? 'selected' : ''}>${esc(n)}</option>`).join('')}</select></div>`;
+  }).join('');
+}
+$('#tkSave').addEventListener('click', () => {
+  state.tanks = $$('#tk-grid select').map(s => s.value); persist(); device.send('tanks', { tanks: state.tanks }); toast('Tanks saved');
+});
+$('#tkCancel').addEventListener('click', () => { renderTanks(); toast('Changes discarded'); });
+$('#tk-reset').addEventListener('click', async () => {
+  if (await confirmBox('Reset all 8 tanks to full?', 'Reset')) { device.send('tanks/reset'); toast('All tanks reset'); }
+});
+
+/* ==========================================================================
+   Services & About
+   ========================================================================== */
+$('#tab-services').addEventListener('click', async e => {
+  const b = e.target.closest('[data-service]'); if (!b) return;
+  const labels = { flush: 'Start the clean / flush cycle?', prime: 'Prime all pumps now?' };
+  if (await confirmBox(labels[b.dataset.service], 'Start')) { device.send('service/' + b.dataset.service); toast('Service cycle started'); }
+});
+function renderAbout() {
+  const rows = [['Software Version:', SYSTEM_INFO.software], ['Firmware Version:', SYSTEM_INFO.firmware], ['Hardware Revision:', SYSTEM_INFO.hardware],
+                ['Serial Number:', SYSTEM_INFO.serial], ['Network Status:', navigator.onLine ? 'Connected' : 'Offline']];
+  $('#aboutInfo').innerHTML = rows.map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join('');
+}
+
+/* ==========================================================================
+   Init
+   ========================================================================== */
+renderWelcome();
+})();
+</script>
+</body>
+</html>
