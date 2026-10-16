@@ -1,7 +1,7 @@
 {
   "name": "Drink Dispenser",
   "short_name": "Dispenser",
-  "start_url": "/",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#1D1D1D",
   "theme_color": "#1D1D1D",
