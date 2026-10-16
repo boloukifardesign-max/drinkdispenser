@@ -74,10 +74,12 @@ img { display: block; }
 .bar-btn::after { content: ''; position: absolute; top: -16px; bottom: -16px; left: -16px; right: -16px; }   /* bigger tap area */
 .bar-btn .icon { display: block; width: 100%; height: 100%; }
 #btnHome  { left: 58px; width: 20px; height: 20px; }
+#btnBell  { left: 855px; width: 20px; height: 20px; }
+#btnBell.active { color: var(--gold); }
 #btnGear  { left: 897px; width: 20.75px; height: 19.58px; }
 #btnGear.active { color: var(--gold); }
 #wifi     { position: absolute; left: 939.72px; top: 48px; width: 27.97px; height: 20px; }
-#btnHome, #btnGear, #wifi { color: #EEE6D5; color: color(display-p3 0.9333 0.9020 0.8353); }   /* icon colour from the supplied SVGs */
+#btnHome, #btnBell, #btnGear, #wifi { color: #EEE6D5; color: color(display-p3 0.9333 0.9020 0.8353); }   /* icon colour from the supplied SVGs */
 #btnGear.active { color: var(--gold); }
 #barTitle { position: absolute; left: 97px; top: 46px; white-space: nowrap; font: 300 24px/26px var(--f-head); letter-spacing: .01em; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835); }
 .bar[data-view="home"] #btnHome, .bar[data-view="home"] #barTitle { display: none; }
@@ -251,11 +253,32 @@ img { display: block; }
 .cat.locked:active { transform: none; }
 .cat.locked::after { content: ''; position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23DAA95B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='9' width='12' height='8' rx='2'/%3E%3Cpath d='M7 9V6a3 3 0 0 1 6 0v3'/%3E%3C/svg%3E") no-repeat center / contain; }
 .row.drink .thumb[style*="background-image"] { background-color: transparent; background-size: contain; background-repeat: no-repeat; }
-/* Alarm banner + toast messages share one spot: centred on the icon row (y = 58), 30 px high, right edge 22 px left of the gear icon (= gap between gear and wifi) */
-#alarm { position: absolute; right: 149px; top: 43px; max-width: 560px; height: 30px; padding: 0 12px; border: 1px solid var(--red); border-radius: 10px; background: rgba(226,95,99,.14); color: var(--red); font-size: 12px; line-height: 28px; white-space: nowrap; z-index: 30; display: none; cursor: pointer; }
-#alarm.low { border-color: var(--gold); background: rgba(218,169,91,.12); color: var(--gold); }
-#alarm.on { display: block; animation: alarmBlink 2.4s ease-in-out infinite; }
-@keyframes alarmBlink { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
+/* Bell + red dot, dynamic-island message pill, notification centre */
+.bell-dot { position: absolute; top: -3px; right: -3px; width: 10px; height: 10px; border-radius: 50%; background: #FF002E; border: 1.5px solid #1D1D1D; transform: scale(0); transition: transform .25s cubic-bezier(.34,1.56,.64,1); pointer-events: none; }
+#btnBell.has .bell-dot { transform: scale(1); }
+#btnBell.ring .icon { animation: bellRing .7s ease; transform-origin: 50% 12%; }
+@keyframes bellRing { 0% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } 100% { transform: rotate(0); } }
+
+/* Message pill: 30 px high, centred on the icon row (y = 58). It grows from its centre, closes towards the centre, then flies into the bell. */
+#island { position: absolute; left: 0; top: 43px; width: 0; height: 30px; opacity: 0; overflow: hidden; white-space: nowrap; display: flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: 10px; transform: translateX(-50%); z-index: 60; pointer-events: none; }
+#island.on { pointer-events: auto; cursor: pointer; }
+#islandTxt { flex: none; padding: 0 14px; font: 400 12px/28px Arial, 'Helvetica Neue', sans-serif; opacity: 0; }
+#island.k-error { border-color: #E25F63; color: #E25F63; background: linear-gradient(rgba(226,95,99,.14), rgba(226,95,99,.14)), #1D1D1D; }
+#island.k-low   { border-color: #DAA95B; color: #DAA95B; background: linear-gradient(rgba(218,169,91,.12), rgba(218,169,91,.12)), #1D1D1D; }
+#island.k-info  { border-color: rgba(240,230,211,.95); color: #1D1D1D; background: rgba(240,230,211,.95); }
+
+#notif { position: absolute; top: 84px; right: 56px; width: 340px; max-height: 430px; display: flex; flex-direction: column; background: var(--bg); border: 1px solid var(--line); border-radius: 15px; z-index: 55;
+  opacity: 0; visibility: hidden; transform: translateY(-8px) scale(.97); transform-origin: 100% 0; transition: opacity .2s ease, transform .2s ease, visibility .2s; }
+#notif.on { opacity: 1; visibility: visible; transform: none; }
+.n-h { padding: 14px 16px 10px; font: 700 13px/15px var(--f-ui); border-bottom: 1px solid var(--line); }
+#notifList { overflow-y: auto; max-height: 370px; scrollbar-width: none; }
+#notifList::-webkit-scrollbar { display: none; }
+.n-i { display: flex; align-items: flex-start; padding: 11px 16px; font-size: 12px; line-height: 16px; border-bottom: 1px solid rgba(66,66,66,.5); cursor: pointer; }
+.n-i:last-child { border-bottom: 0; }
+.n-d { flex: 0 0 8px; height: 8px; margin: 4px 10px 0 0; border-radius: 50%; background: #FF002E; }
+.n-d.low { background: var(--gold); }
+.n-empty { padding: 22px 16px; font-size: 12px; color: rgba(240,230,211,.5); text-align: center; }
 #wifi.off { opacity: .35; }
 
 /* Corner smoothing layer (inserted by script) */
@@ -332,8 +355,6 @@ img { display: block; }
 /* ==========================================================================
    Toast + modal
    ========================================================================== */
-#toast { position: absolute; right: 149px; top: 43px; max-width: 700px; height: 30px; padding: 0 14px; border-radius: 5px; background: rgba(240,230,211,.95); color: var(--bg); font-size: 12px; line-height: 30px; opacity: 0; transform: translateY(-6px); pointer-events: none; transition: opacity .25s, transform .25s; z-index: 60; white-space: nowrap; }
-#toast.on { opacity: 1; transform: none; }
 #modal { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: 50; display: none; place-items: center; background: rgba(0,0,0,.6); }
 #modal.on { display: grid; }
 #modal .box { width: 380px; padding: 28px; border: 1px solid var(--bronze); border-radius: 20px; background: var(--bg); text-align: center; }
@@ -353,6 +374,7 @@ img { display: block; }
       <symbol id="i-home" viewBox="0 0 15 15"><path d="M5.414 1.07581L1.641 4.01581C1.011 4.50581 0.5 5.54881 0.5 6.33981V11.5268C0.5 13.1508 1.823 14.4808 3.447 14.4808H11.553C13.177 14.4808 14.5 13.1508 14.5 11.5338V6.43781C14.5 5.59081 13.933 4.50581 13.24 4.02281L8.914 0.991809C7.934 0.305809 6.359 0.340809 5.414 1.07581Z" stroke-width="1.125"/><path d="M7.5 11.6807V9.58075" stroke-width="1.125"/></symbol>
       <symbol id="i-wifi" viewBox="0 0 21 16" preserveAspectRatio="none"><path d="M3.40991 7.49C7.70991 4.17 13.2999 4.17 17.5999 7.49" stroke-width="1.2"/><path d="M0.5 4.01C6.56 -0.67 14.44 -0.67 20.5 4.01" stroke-width="1.2"/><path d="M5.29004 11.1401C8.44004 8.70006 12.55 8.70006 15.7 11.1401" stroke-width="1.2"/><path d="M7.90015 14.8C9.48015 13.58 11.5302 13.58 13.1102 14.8" stroke-width="1.2"/></symbol>
       <symbol id="i-gear" viewBox="0 0 16 15" preserveAspectRatio="none"><path d="M7.91624 9.72533C9.14498 9.72533 10.1411 8.72924 10.1411 7.5005C10.1411 6.27176 9.14498 5.27566 7.91624 5.27566C6.6875 5.27566 5.69141 6.27176 5.69141 7.5005C5.69141 8.72924 6.6875 9.72533 7.91624 9.72533Z" stroke-width="1.15"/><path d="M0.5 8.15307V6.84783C0.5 6.07656 1.13037 5.43877 1.90906 5.43877C3.25138 5.43877 3.80017 4.48951 3.12531 3.32518C2.73967 2.65773 2.96957 1.79004 3.64443 1.4044L4.92742 0.670208C5.5133 0.32165 6.26974 0.529302 6.6183 1.11518L6.69987 1.25608C7.36732 2.42041 8.46491 2.42041 9.13978 1.25608L9.22135 1.11518C9.56991 0.529302 10.3264 0.32165 10.9122 0.670208L12.1952 1.4044C12.8701 1.79004 13.1 2.65773 12.7143 3.32518C12.0395 4.48951 12.5883 5.43877 13.9306 5.43877C14.7019 5.43877 15.3397 6.06914 15.3397 6.84783V8.15307C15.3397 8.92435 14.7093 9.56213 13.9306 9.56213C12.5883 9.56213 12.0395 10.5114 12.7143 11.6757C13.1 12.3506 12.8701 13.2109 12.1952 13.5965L10.9122 14.3307C10.3264 14.6793 9.56991 14.4716 9.22135 13.8857L9.13978 13.7448C8.47233 12.5805 7.37474 12.5805 6.69987 13.7448L6.6183 13.8857C6.26974 14.4716 5.5133 14.6793 4.92742 14.3307L3.64443 13.5965C2.96957 13.2109 2.73967 12.3432 3.12531 11.6757C3.80017 10.5114 3.25138 9.56213 1.90906 9.56213C1.13037 9.56213 0.5 8.92435 0.5 8.15307Z" stroke-width="1.15"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 20 20"><path d="M10 2.8a4.8 4.8 0 0 0-4.8 4.8v2.6L3.6 13h12.8l-1.6-2.8V7.6A4.8 4.8 0 0 0 10 2.8z" stroke-width="1.5"/><path d="M8 15.4a2 2 0 0 0 4 0" stroke-width="1.5"/></symbol>
       <symbol id="i-general" viewBox="0 0 20 20"><path d="M3 5h5M12 5h5M3 10h8M15 10h2M3 15h2M9 15h8"/><circle cx="10" cy="5" r="2"/><circle cx="13" cy="10" r="2"/><circle cx="7" cy="15" r="2"/></symbol>
       <symbol id="i-base" viewBox="0 0 20 20"><path d="M8 2h4M9 2v4L7 9v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V9l-2-3V2M7 12h6"/></symbol>
       <symbol id="i-quick" viewBox="0 0 20 20"><path d="M10 2.5S4.5 8.6 4.5 12a5.5 5.5 0 0 0 11 0C15.5 8.6 10 2.5 10 2.5z"/><path d="M8 12.5a2.2 2.2 0 0 0 2 2"/></symbol>
@@ -370,6 +392,7 @@ img { display: block; }
   <header class="bar hidden" id="bar" data-view="splash">
     <button class="bar-btn" id="btnHome" aria-label="Home"><svg class="icon"><use href="#i-home" xlink:href="#i-home"/></svg></button>
     <div id="barTitle">Settings</div>
+    <button class="bar-btn" id="btnBell" aria-label="Notifications"><svg class="icon"><use href="#i-bell" xlink:href="#i-bell"/></svg><i class="bell-dot"></i></button>
     <button class="bar-btn" id="btnGear" aria-label="Settings"><svg class="icon"><use href="#i-gear" xlink:href="#i-gear"/></svg></button>
     <svg class="icon" id="wifi"><use href="#i-wifi" xlink:href="#i-wifi"/></svg>
   </header>
@@ -985,8 +1008,8 @@ img { display: block; }
     </div>
   </section>
 
-  <div id="toast"></div>
-  <div id="alarm" role="alert"></div>
+  <div id="island" role="alert"><span id="islandTxt"></span></div>
+  <div id="notif"><div class="n-h">Notifications</div><div id="notifList"></div></div>
   <div id="modal"><div class="box"><p id="modalMsg"></p><div class="btns"><button class="btn" id="modalNo">Cancel</button><button class="btn gold" id="modalYes">Confirm</button></div></div></div>
 </div>
 
@@ -1019,11 +1042,11 @@ const device = {
     const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000));
     return Promise.race([req, timeout]);
   },
-  setOnline(on) { this.online = on; const w = document.getElementById('wifi'); if (w) w.classList.toggle('off', !on); },
+  setOnline(on) { this.online = on; const w = document.getElementById('wifi'); if (w) w.classList.toggle('off', !on); syncNotifs(); },
   async send(action, payload = {}) {
     if (!this.online) return {};                                   // demo mode: UI keeps state locally
     try { return await this.request('POST', action, payload); }
-    catch (e) { this.setOnline(false); toast('ESP32 not responding'); return null; }
+    catch (e) { this.setOnline(false); alertMsg('esp', 'ESP32 not responding', () => !device.online); return null; }
   }
 };
 
@@ -1192,7 +1215,7 @@ document.addEventListener('touchmove', e => {
   if (e.touches.length > 1) return e.preventDefault();                          // no pinch
   const t = e.target;
   if (t.closest('input, textarea')) return;
-  const sc = t.closest('.rows, #menuScroll');                                   // only these lists may scroll
+  const sc = t.closest('.rows, #menuScroll, #notifList');                                   // only these lists may scroll
   if (!sc) return e.preventDefault();
   const dx = e.touches[0].clientX - touchX, dy = e.touches[0].clientY - touchY;
   if (sc.id === 'menuScroll') {                                                 // horizontal list: no rubber-band at the ends
@@ -1221,11 +1244,103 @@ document.addEventListener('focusout', () => setTimeout(() => {
 document.addEventListener('visibilitychange', () => { if (!document.hidden) fit(); else saveNav(); });
 addEventListener('pagehide', () => saveNav());
 
-let toastTimer;
-function toast(msg) {
-  const t = $('#toast'); t.textContent = msg; t.classList.add('on');
-  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove('on'), 2200);
+/* ==========================================================================
+   Messages
+   - Errors / alarms: dynamic-island pill for 3 s, then they live in the notification centre (bell) until the cause is gone.
+     Tapping something that is still wrong shows the pill again.
+   - Confirmations (drink poured, settings saved ...): pill for 2 s, not kept.
+   ========================================================================== */
+const ISL_RIGHT = 833, BELL_X = 865, ISL_H = 30;     // pill right edge = 22 px left of the bell; bell centre x
+const ISL_EASE = 'cubic-bezier(.32,.72,0,1)';
+const islandQ = [];
+let islandBusy = false, devErr = false, notifs = [];
+
+function toast(msg) { enqueue(msg, 'info', 2000); }
+function enqueue(text, kind, total) {
+  if (islandQ.some(q => q.text === text && q.kind === kind)) return;
+  if (islandQ.length >= 6) islandQ.shift();
+  islandQ.push({ text, kind, total }); runIsland();
 }
+async function runIsland() {
+  if (islandBusy) return;
+  islandBusy = true;
+  while (islandQ.length && view !== 'splash') await playIsland(islandQ.shift());
+  islandBusy = false;
+}
+async function playIsland(m) {
+  const el = $('#island'), tx = $('#islandTxt'), alarm = m.kind !== 'info';
+  el.className = 'k-' + m.kind; tx.textContent = m.text;
+  el.style.transition = 'none'; tx.style.transition = 'none';
+  el.style.left = '0px'; el.style.width = 'auto'; el.style.opacity = '0'; el.style.transform = 'translateX(-50%) scale(1)'; tx.style.opacity = '0';
+  const W = Math.min(el.offsetWidth, 520);
+  el.style.left = (ISL_RIGHT - W / 2) + 'px'; el.style.width = '10px';        // starts as a dot in the middle
+  void el.offsetWidth;
+  /* open: grows from the centre */
+  el.style.transition = 'width .6s ' + ISL_EASE + ', opacity .25s ease'; tx.style.transition = 'opacity .3s ease .25s';
+  el.style.width = W + 'px'; el.style.opacity = '1'; tx.style.opacity = '1';
+  if (alarm) el.classList.add('on');
+  await sleep(m.total);
+  /* close: both sides move towards the middle */
+  tx.style.transition = 'opacity .15s ease'; tx.style.opacity = '0';
+  el.style.transition = 'width .45s ' + ISL_EASE; el.style.width = ISL_H + 'px';
+  await sleep(450);
+  el.classList.remove('on');
+  if (alarm) {                                                                  // then it flies into the bell
+    el.style.transition = 'left .45s cubic-bezier(.55,0,.8,.3), transform .45s cubic-bezier(.55,0,.8,.3), opacity .35s ease .1s';
+    el.style.left = BELL_X + 'px'; el.style.transform = 'translateX(-50%) scale(.15)'; el.style.opacity = '0';
+    await sleep(450);
+    ringBell();
+  } else { el.style.transition = 'opacity .25s ease'; el.style.opacity = '0'; await sleep(250); }
+  el.style.transition = 'none'; el.style.width = '0px'; el.style.opacity = '0';
+}
+function ringBell() { const b = $('#btnBell'); b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); setTimeout(() => b.classList.remove('ring'), 750); }
+
+/* Notification centre */
+const tankMsg = (i, st) => st === 'empty' ? `${tankLabel(i)} is empty — please refill` : `${tankLabel(i)} is running low`;
+const groupMsg = (list, st) => list.length === 1 ? tankMsg(list[0], st) : `Tanks ${list.map(i => i + 1).join(', ')} are ${st === 'empty' ? 'empty — please refill' : 'running low'}`;
+
+/* Tank alarms are derived from the tank levels; errors raised by a tap carry a check() that says whether the cause is still there */
+function syncNotifs() {
+  const fresh = { empty: [], low: [] };
+  state.tanks.forEach((t, i) => {
+    const key = 'tank:' + i, st = tankState(t), it = notifs.find(n => n.key === key);
+    if (st === 'empty' || st === 'low') {
+      const kind = st === 'empty' ? 'error' : 'low';
+      if (!it) { notifs.push({ key, text: tankMsg(i, st), kind, tank: i }); fresh[st].push(i); }
+      else { if (it.kind !== kind && kind === 'error') fresh.empty.push(i); it.kind = kind; it.text = tankMsg(i, st); }
+    } else if (it) notifs = notifs.filter(n => n !== it);
+  });
+  notifs = notifs.filter(n => !n.check || n.check());
+  if (fresh.empty.length) enqueue(groupMsg(fresh.empty, 'empty'), 'error', 3000);
+  if (fresh.low.length) enqueue(groupMsg(fresh.low, 'low'), 'low', 3000);
+  renderNotifs();
+}
+function alertMsg(key, text, check, kind = 'error') {
+  const it = notifs.find(n => n.key === key);
+  if (it) it.text = text; else notifs.push({ key, text, kind, check });
+  enqueue(text, kind, 3000); renderNotifs();
+}
+function renotifyTank(i) {
+  const it = notifs.find(n => n.key === 'tank:' + i);
+  if (it) enqueue(it.text, it.kind === 'low' ? 'low' : 'error', 3000);
+}
+function renderNotifs() {
+  const list = [...notifs].sort((a, b) => (a.kind === 'error' ? 0 : 1) - (b.kind === 'error' ? 0 : 1));
+  $('#notifList').innerHTML = list.length
+    ? list.map(n => `<div class="n-i" data-key="${esc(n.key)}"><i class="n-d ${n.kind}"></i><span>${esc(n.text)}</span></div>`).join('')
+    : '<div class="n-empty">No notifications</div>';
+  $('#btnBell').classList.toggle('has', notifs.length > 0);
+}
+const openNotif = () => { $('#notif').classList.add('on'); $('#btnBell').classList.add('active'); };
+const closeNotif = () => { $('#notif').classList.remove('on'); $('#btnBell').classList.remove('active'); };
+$('#btnBell').addEventListener('click', () => $('#notif').classList.contains('on') ? closeNotif() : openNotif());
+$('#island').addEventListener('click', openNotif);
+['click', 'touchstart'].forEach(ev => document.addEventListener(ev, e => { if (!e.target.closest('#notif, #btnBell, #island')) closeNotif(); }, { passive: true }));
+$('#notifList').addEventListener('click', e => {
+  const r = e.target.closest('.n-i'); if (!r) return;
+  const n = notifs.find(x => x.key === r.dataset.key); closeNotif();
+  if (n && n.tank !== undefined) openSettings('tanks');
+});
 function confirmBox(msg, okLabel = 'Confirm') {
   return new Promise(res => {
     $('#modalMsg').textContent = msg; $('#modalYes').textContent = okLabel; $('#modal').classList.add('on'); smooth($('#modal'));
@@ -1438,7 +1553,7 @@ function go(name) {
   bar.dataset.view = name;
   bar.classList.toggle('hidden', name === 'splash');
   $('#btnGear').classList.toggle('active', name === 'settings');
-  updateAlarm();
+  closeNotif(); updateAlarm(); runIsland();
   saveNav();
 }
 
@@ -1470,7 +1585,7 @@ const MENU_TITLES = { 'Cocktail': 'Cocktails Menu', 'Mocktail': 'Mocktails Menu'
 const WANT_TXT = 'I Want This!', NA_TXT = 'Not Available';
 
 function openMenu(type) {
-  if (isLocked(type)) { go('home'); return toast(LOCK_MSG); }
+  if (isLocked(type)) { go('home'); return alertMsg('lock', LOCK_MSG, () => !!state.settings.childLock); }
   menuType = type;
   $('#barTitle').textContent = MENU_TITLES[type] || 'Menu';
   const list = state.drinks.filter(d => d.type === type);
@@ -1520,17 +1635,7 @@ const tankState = t => !t.base ? 'none' : t.level <= 0 ? 'empty' : t.level <= t.
 const tankLabel = i => `Tank ${i + 1}${state.tanks[i].base ? ' (' + state.tanks[i].base + ')' : ''}`;
 const levelText = t => t.base ? `${fmtLevel(t.level)} / ${fmtLevel(t.capacity)} ${unit()}` : 'No drink base assigned';
 
-/* Banner on every page except the splash; tap it to open Tanks Settings */
-function updateAlarm() {
-  const el = $('#alarm'), empty = [], low = [];
-  state.tanks.forEach((t, i) => { const s = tankState(t); if (s === 'empty') empty.push(i); else if (s === 'low') low.push(i); });
-  const list = empty.length ? empty : low;
-  if (!list.length || view === 'splash') { el.className = ''; return; }
-  const what = empty.length ? 'empty — please refill' : 'running low';
-  el.textContent = list.length === 1 ? `${tankLabel(list[0])} is ${what}` : `Tanks ${list.map(i => i + 1).join(', ')} are ${what}`;
-  el.className = 'on' + (empty.length ? '' : ' low');
-}
-$('#alarm').addEventListener('click', () => openSettings('tanks'));
+function updateAlarm() { syncNotifs(); }
 
 function findTank(base) {                      // the tank holding this base with the most liquid
   let best = -1;
@@ -1589,10 +1694,10 @@ async function runPour(key, job, show) {
       await sleep(500);
       try {
         const s = await device.request('GET', 'status'); fails = 0; applyStatus(s);
-        if (s.state === 'error') { toast(s.error || 'Device error'); break; }
+        devErr = s.state === 'error'; if (devErr) { alertMsg('deverr', s.error || 'Device error', () => devErr); break; }
         if (s.state === 'idle') { done = true; break; }
         report(s.progress || 0);
-      } catch (e) { if (++fails >= 4) { device.setOnline(false); toast('Lost connection to the ESP32'); break; } }
+      } catch (e) { if (++fails >= 4) { device.setOnline(false); alertMsg('esp', 'Lost connection to the ESP32', () => !device.online); break; } }
     }
   } else {
     const total = job.groups.reduce((sum, g) => sum + groupMs(g), 0);
@@ -1614,7 +1719,7 @@ function stopPour() { busy.stop = true; device.send('stop'); }
 async function orderDrink(d, btn) {
   if (busy) { if (busy.key === btn) stopPour(); else toast('Another drink is being prepared'); return; }
   const problem = canMake(d);
-  if (problem) return toast(problem);
+  if (problem) return alertMsg('drink:' + d.id, problem, () => !!canMake(d));
   const res = await runPour(btn, { id: d.id, name: d.name, cup: d.cup, groups: pourGroups(d) }, p => { btn.textContent = `Stop · ${Math.round(p * 100)}%`; });
   updateAvailability();                                           // puts the right label back (gold or grey)
   if (res.refused) { if (res.error) toast(res.error); return; }
@@ -1626,7 +1731,7 @@ async function orderDrink(d, btn) {
    ========================================================================== */
 const QS_W = 911, QS_GAP = 16;                    // strip width, margin left open in the stroke on each side of the thumb
 
-function openQuick() { if (isLocked('Quick Mix')) { go('home'); return toast(LOCK_MSG); } $('#barTitle').textContent = 'Quick Mix'; renderQuick(); go('quick'); }
+function openQuick() { if (isLocked('Quick Mix')) { go('home'); return alertMsg('lock', LOCK_MSG, () => !!state.settings.childLock); } $('#barTitle').textContent = 'Quick Mix'; renderQuick(); go('quick'); }
 
 function renderQuick() {
   buildPresets();
@@ -1674,16 +1779,16 @@ function updateQuick() {                                     // in place: safe t
 }
 $('#q-size').addEventListener('click', e => {
   const b = e.target.closest('.qs-num'); if (!b) return;
-  state.quick.selected = +b.dataset.v; moveThumb(true); setTimeout(persist, 600);
+  state.quick.selected = +b.dataset.v; moveThumb(true); syncNotifs(); setTimeout(persist, 600);
 });
 $('#q-grid').addEventListener('click', e => { const c = e.target.closest('.qcard'); if (c) quickPour(+c.dataset.i); });
 
 async function quickPour(i) {
   const t = state.tanks[i], ml = state.quick.selected, key = 'q' + i;
   if (busy) { if (busy.key === key) stopPour(); else toast('Another pour is in progress'); return; }
-  if (!t.base) { openSettings('tanks'); return toast(`Tank ${i + 1} has no drink base — choose one and tap Save`); }
-  if (t.level <= 0) { openSettings('tanks'); return toast(`${tankLabel(i)} is empty — refill it, then tap Refilled`); }
-  if (t.level < ml) return toast(`Only ${fmtLevel(t.level)} ${unit()} left in ${tankLabel(i)} — choose a smaller volume or refill`);
+  if (!t.base) { openSettings('tanks'); return alertMsg('qbase:' + i, `Tank ${i + 1} has no drink base — choose one and tap Save`, () => !state.tanks[i].base); }
+  if (t.level <= 0) { openSettings('tanks'); return renotifyTank(i); }
+  if (t.level < ml) return alertMsg('qvol:' + i, `Only ${fmtLevel(t.level)} ${unit()} left in ${tankLabel(i)} — choose a smaller volume or refill`, () => state.tanks[i].level > 0 && state.tanks[i].level < state.quick.selected);
   const base = t.base;
   const res = await runPour(key, { id: 'quick', name: base, quick: true, groups: [{ po: 1, items: [{ base, ml, tank: i + 1 }] }] }, () => updateQuick());
   updateQuick();
@@ -1730,7 +1835,7 @@ $('#genSave').addEventListener('click', () => {
     device: G.device.value.trim(), profile: G.profile.value.trim(), language: G.language.value,
     unit: G.unit.value, standby: G.standby.value, oled: G.oled.value, childLock: G.lock.classList.contains('on')
   };
-  persist(); renderWelcome(); updateLock(); applyUnit(); device.send('settings', state.settings); toast('Settings saved');
+  persist(); renderWelcome(); updateLock(); syncNotifs(); applyUnit(); device.send('settings', state.settings); toast('Settings saved');
 });
 
 /* ==========================================================================
