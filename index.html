@@ -14,7 +14,7 @@
 
 <!-- Optional web fonts. Offline (ESP32 access point) the fallbacks below are used automatically. -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Italiana&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500&family=Italiana&display=swap" rel="stylesheet">
 
 <style>
 /* ==========================================================================
@@ -74,7 +74,7 @@ img { display: block; }
 .bar-btn::after { content: ''; position: absolute; top: -16px; bottom: -16px; left: -16px; right: -16px; }   /* bigger tap area */
 .bar-btn .icon { display: block; width: 100%; height: 100%; }
 #btnHome  { left: 58px; width: 20px; height: 20px; }
-#btnBell  { left: 856.3px; width: 17.4px; height: 19.58px; }
+#btnBell  { left: 855px; width: 20px; height: 20px; }
 #btnBell.active { color: var(--gold); }
 #btnGear  { left: 897px; width: 20.75px; height: 19.58px; }
 #btnGear.active { color: var(--gold); }
@@ -95,25 +95,34 @@ img { display: block; }
 /* ==========================================================================
    Home
    ========================================================================== */
-#welcome { position: absolute; left: 134px; top: 161px; height: 27px; white-space: nowrap; font: 300 25px/27px var(--f-head); letter-spacing: .01em; color: rgba(240,230,211,.5); }
-#home h2 { position: absolute; left: 134px; top: 195px; height: 57px; white-space: nowrap; font: 400 48px/57px var(--f-title); }
+#welcome { position: absolute; left: 134px; top: 161px; height: 27px; white-space: nowrap; font: 300 25px/27px var(--f-head); letter-spacing: .01em; color: rgba(255,255,255,.5); }
+#home h2 { position: absolute; left: 134px; top: 195px; height: 57px; white-space: nowrap; font: 400 48px/57px var(--f-title); color: #FFFFFF; }
 
+/* 3D buttons: the element is the fixed BASE (recess, soft light/dark shadows, 1px outside stroke); ::before is the FACE (gradient + bevel).
+   While pressed the face gets 2 px smaller on every side and everything on it compresses 3 % towards the button centre. */
+:root { --face: linear-gradient(135.87deg, rgba(0,0,0,.36) -9.74%, rgba(128,128,128,.36) 173.91%), linear-gradient(135.87deg, rgba(0,0,0,.5) -9.74%, rgba(128,128,128,.5) 173.91%); }
 .cat { position: absolute; top: 294px; width: 170px; height: 307px; box-sizing: border-box; border-radius: 25px;
-  background: linear-gradient(180deg, rgba(141, 124, 85, 0.15) 0%, rgba(29, 29, 29, 0.005) 83.7%);
-  background: linear-gradient(180deg, color(display-p3 0.541 0.490 0.353 / 0.15) 0%, color(display-p3 0.114 0.114 0.114 / 0.005) 83.7%);
-  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.8), inset 0px 0px 50px #181818;
-  box-shadow: 0px 0px 20px color(display-p3 0.000 0.000 0.000 / 0.8), inset 0px 0px 50px color(display-p3 0.094 0.094 0.094);
-  transition: transform .15s; }
-.cat:active { transform: scale(.97); }
-.cat .art { position: absolute; left: 50%; top: 37px; -webkit-transform: translateX(-50%); transform: translateX(-50%); }
-.cat i { position: absolute; left: 85px; top: 204px; width: 0; height: 35px; border-left: 1px solid rgba(141, 124, 85, 0.5); border-left: 1px solid color(display-p3 0.541 0.490 0.353 / 0.5); }   /* Line 21 (35px, rotated 90deg) */
-.cat span { position: absolute; left: 0; right: 0; top: 258px; height: 19px; text-align: center; font: 400 16px/19px 'Kannada MN', 'Helvetica Neue', Arial, sans-serif; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835); }
+  background: #1C1C1C; background: color(display-p3 0.110 0.110 0.110);
+  box-shadow: 0 0 0 1px #8A7D5A, inset 0px 0px 15px rgba(0, 0, 0, 0.78), -13px -9px 51.1px rgba(78, 78, 78, 0.39), 15px 29px 50px rgba(0, 0, 0, 0.36); }
+.cat[data-type="Cocktail"] { z-index: 4; } .cat[data-type="Mocktail"] { z-index: 3; } .cat[data-type="Shooter"] { z-index: 2; } .cat[data-type="Quick Mix"] { z-index: 1; }   /* a card never lights up its right neighbour */
+.cat::before { content: ''; position: absolute; left: 3px; top: 4px; width: 162.22px; height: 300px; border-radius: 21px; background: var(--face); filter: blur(0.5px);
+  box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.06), inset -3px -4px 6px -3px rgba(0, 0, 0, 0.4), inset 3px 6px 19px rgba(0, 0, 0, 0.1);
+  transition: left .26s cubic-bezier(.3, 1.45, .5, 1), top .26s cubic-bezier(.3, 1.45, .5, 1), width .26s cubic-bezier(.3, 1.45, .5, 1), height .26s cubic-bezier(.3, 1.45, .5, 1), border-radius .26s ease, box-shadow .26s ease; pointer-events: none; }
+.cat .art { position: absolute; left: 50%; top: 37px; -webkit-transform: translate(-50%, 0) scale(1); transform: translate(-50%, 0) scale(1); transform-origin: 50% 116.5px; transition: transform .26s cubic-bezier(.3, 1.45, .5, 1); }
+.cat i { position: absolute; left: 85px; top: 204px; width: 0; height: 35px; border-left: 1px solid rgba(141, 124, 85, 0.5); border-left: 1px solid color(display-p3 0.541 0.490 0.353 / 0.5);
+  transform: scale(1); transform-origin: 0 -50.5px; transition: transform .26s cubic-bezier(.3, 1.45, .5, 1); }
+.cat span { position: absolute; left: 0; right: 0; top: 258px; height: 19px; text-align: center; font: 400 16px/19px 'Kannada MN', 'Helvetica Neue', Arial, sans-serif; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835);
+  transform: scale(1); transform-origin: 50% -104.5px; transition: transform .26s cubic-bezier(.3, 1.45, .5, 1); }
+.cat:active::before { left: 5px; top: 6px; width: 158.22px; height: 296px; border-radius: 19px; box-shadow: inset 0px 1px 7px rgba(0, 0, 0, 0.5), inset 0px 0px 2px rgba(0, 0, 0, 0.45); }
+.cat:active::before, .cat:active .art, .cat:active i, .cat:active span { transition-duration: .09s; transition-timing-function: ease-out; }
+.cat:active .art { -webkit-transform: translate(-50%, 0) scale(.97); transform: translate(-50%, 0) scale(.97); }
+.cat:active i, .cat:active span { transform: scale(.97); }
 
 /* ==========================================================================
    Drinks menu (cards) - Cocktails / Mocktails / Shooters
    Cards: 215 x 594 at y = 121, x = 57 / 289 / 521 / 753 (gap 17)
    ========================================================================== */
-#menuScroll { position: absolute; left: 0; top: 73px; width: 1024px; height: 672px; padding: 48px 0 30px 57px; scroll-padding-left: 57px; display: flex; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+#menuScroll { position: absolute; left: 0; top: 73px; width: 1024px; height: 695px; padding: 51px 0 53px 57px; scroll-padding-left: 57px; display: flex; overflow-x: auto; scroll-snap-type: x proximity; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
 #menuScroll::-webkit-scrollbar { display: none; }
 #menuScroll::after { content: ''; flex: 0 0 56px; }          /* free space after the last card (4 cards = 57 + 4x215 + 3x17 + 56 = 1024) */
 
@@ -125,39 +134,46 @@ img { display: block; }
 #mNext { left: 982px; }
 .m-arrow.end { opacity: 0; pointer-events: none; }                 /* nothing more on that side: the arrow fades out */
 /* Background-coloured side padding: cards slide under it instead of under the arrows */
-.m-cover { position: absolute; top: 73px; height: 672px; background: var(--bg); z-index: 2; }
+.m-cover { position: absolute; top: 73px; height: 695px; background: var(--bg); z-index: 2; }
 #mCoverL { left: 0; width: 57px; }
 #mCoverR { left: 968px; width: 56px; }
 .m-cover.off { display: none; }
 #menuEmpty { position: absolute; left: 0; right: 0; top: 340px; text-align: center; font-size: 14px; color: rgba(240,230,211,.55); display: none; }
 
 .card + .card { margin-left: 17px; }
-.card { position: relative; flex: 0 0 215px; width: 215px; height: 594px; box-sizing: border-box; border-radius: 25px;
-  background: linear-gradient(180deg, rgba(141, 124, 85, 0.15) 0%, rgba(29, 29, 29, 0.005) 83.7%);
-  background: linear-gradient(180deg, color(display-p3 0.541 0.490 0.353 / 0.15) 0%, color(display-p3 0.114 0.114 0.114 / 0.005) 83.7%);
-  box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.8), inset 0px 0px 50px #181818;
-  box-shadow: 0px 0px 30px color(display-p3 0.000 0.000 0.000 / 0.8), inset 0px 0px 50px color(display-p3 0.094 0.094 0.094);
+.card { position: relative; flex: 0 0 215px; width: 215px; height: 591px; box-sizing: border-box; border-radius: 25px;
+  background: #1C1C1C; background: color(display-p3 0.110 0.110 0.110);
+  box-shadow: 0 0 0 1px #8A7D5A, inset 0px 0px 15px rgba(0, 0, 0, 0.78), -13px -9px 51.1px rgba(78, 78, 78, 0.39), 15px 29px 50px rgba(0, 0, 0, 0.36);
   scroll-snap-align: start; }
-.card > * { position: absolute; left: 33px; width: 150px; }
-.card .pic { top: 25px; left: 0; width: 215px; height: 250px; border-radius: 12px; background-size: contain; background-repeat: no-repeat; background-position: center; }
+.card::before { content: ''; position: absolute; left: 3px; top: 4px; width: 207px; height: 583px; border-radius: 21px; background: var(--face); filter: blur(0.5px);
+  box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.06), inset -3px -4px 6px -3px rgba(0, 0, 0, 0.4), inset 3px 6px 19px rgba(0, 0, 0, 0.1);
+  transition: left .26s cubic-bezier(.3, 1.45, .5, 1), top .26s cubic-bezier(.3, 1.45, .5, 1), width .26s cubic-bezier(.3, 1.45, .5, 1), height .26s cubic-bezier(.3, 1.45, .5, 1), border-radius .26s ease, box-shadow .26s ease; pointer-events: none; }
+.card > * { position: absolute; left: 33px; width: 150px; transform: scale(1); transform-origin: var(--ox, 74.5px) var(--oy, 0px); transition: transform .26s cubic-bezier(.3, 1.45, .5, 1); }   /* origin = card centre (107.5, 295.5) - own left / top */
+.card .pic { --ox: 107.5px; --oy: 260.5px; } .card h3 { --oy: -23.5px; } .card .meta { --oy: -49.5px; } .card hr { --oy: -84.5px; }
+.card .ing { --oy: -110.5px; } .card .gar { --oy: -141.5px; } .card .org { --oy: -175.5px; } .card .want { --ox: 76.5px; --oy: -216.5px; }
+/* pressed (stays like this until the pour has finished) */
+.card.pressed::before { left: 5px; top: 6px; width: 203px; height: 579px; border-radius: 19px; box-shadow: inset 0px 1px 7px rgba(0, 0, 0, 0.5), inset 0px 0px 2px rgba(0, 0, 0, 0.45); }
+.card.pressed > * { transform: scale(.97); }
+.card.pressed::before, .card.pressed > * { transition-duration: .09s; transition-timing-function: ease-out; }
+.card .pic { top: 35px; left: 0; width: 215px; height: 227px; border-radius: 12px; background-size: contain; background-repeat: no-repeat; background-position: center;
+  filter: drop-shadow(0px 5px 13px rgba(0, 0, 0, 0.25)); }
 .card .pic svg { width: 100%; height: 100%; }
-.card h3 { top: 322px; width: 149px; height: 22px; font: 700 18px/22px 'Kannada MN', 'Helvetica Neue', Arial, sans-serif; color: #8D7C55; color: color(display-p3 0.541 0.490 0.353); }
-.card .meta { top: 348px; width: 100px; height: 11px; white-space: nowrap; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835); }
-.card hr { top: 383px; height: 0; margin: 0; border: 0; border-top: 1px solid rgba(141, 124, 85, 0.5); border-top: 1px solid color(display-p3 0.541 0.490 0.353 / 0.5); }
-.card .ing { top: 409px; width: 140px; }
-.card .gar { top: 440px; width: 140px; }
-.card .org { top: 474px; width: 140px; }
+.card h3 { top: 319px; width: 151px; height: 22px; font: 500 18px/22px Inter, 'Helvetica Neue', Arial, sans-serif; color: #DAA95B; color: color(display-p3 0.824 0.671 0.404); }
+.card .meta { top: 345px; width: 100px; height: 11px; white-space: nowrap; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835); }
+.card hr { top: 380px; height: 0; margin: 0; border: 0; border-top: 1px solid rgba(218, 169, 91, 0.5); border-top: 1px solid color(display-p3 0.824 0.671 0.404 / 0.5); }
+.card .ing { top: 406px; width: 140px; }
+.card .gar { top: 437px; width: 140px; }
+.card .org { top: 471px; width: 140px; }
 .card .ing, .card .gar, .card .org { height: 22px; overflow: hidden; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #F0E6D3; color: color(display-p3 0.933 0.902 0.835); }
 
-/* Button 1: drink can be made -> "I Want This!" (gold) */
-.card .want { top: 517px; width: 150px; height: 41px; border-radius: 10px; padding: 0;
-  background: #DAA95B; background: linear-gradient(96.02deg, color(display-p3 0.824 0.671 0.404) -9.64%, color(display-p3 0.824 0.671 0.404) 90.53%);
-  box-shadow: var(--btn-gold-shadow);
-  color: #1D1D1D; color: color(display-p3 0.114 0.114 0.114);
-  font: 700 12px/41px Arial, 'Helvetica Neue', sans-serif; transition: transform .15s; }
-.card .want:active { transform: scale(.96); }
-/* Button 2: a tank is too low for this drink -> "Not Available" (grey) */
-.card .want.na { background: var(--btn-grey-bg); box-shadow: var(--btn-grey-shadow); }
+/* "I Want This!" pill (drink can be made) and the same pill with red text ("Not Available") */
+.card .want { top: 512px; left: 31px; width: 152px; height: 47.5px; border-radius: 26.5px; padding: 0; z-index: 0;
+  background: #101010; background: color(display-p3 0.063 0.063 0.063);
+  box-shadow: -5px -4px 7px 1px rgba(19, 19, 19, 0.5), 4px 4px 32px #1B1B1B;
+  color: rgba(255, 255, 255, 0.49); font: 400 12px/47.5px Inter, 'Helvetica Neue', Arial, sans-serif; }
+.card .want::before { content: ''; position: absolute; left: 2.59px; top: 2.59px; right: 2.59px; bottom: 2.59px; border-radius: 26.5px; z-index: -1; pointer-events: none;
+  background: linear-gradient(139.5deg, rgba(69, 69, 69, 0.26) 20.26%, rgba(207, 207, 207, 0.26) 172.93%); filter: blur(0.5px); }
+.card .want.na { color: rgba(255, 0, 46, 0.7); }
 
 /* ==========================================================================
    Settings shell: left tabs + panels
@@ -250,7 +266,9 @@ img { display: block; }
 .row.service .btn { height: 34px; padding: 0 18px; font-size: 12px; line-height: 32px; }
 .row.service .btn + .btn { margin-left: 10px; }
 .cat.locked { opacity: .45; }
-.cat.locked:active { transform: none; }
+.cat.locked:active::before { left: 3px; top: 4px; width: 162.22px; height: 300px; border-radius: 21px; box-shadow: inset 2px 2px 3px rgba(255, 255, 255, 0.06), inset -3px -4px 6px -3px rgba(0, 0, 0, 0.4), inset 3px 6px 19px rgba(0, 0, 0, 0.1); }
+.cat.locked:active .art { -webkit-transform: translate(-50%, 0) scale(1); transform: translate(-50%, 0) scale(1); }
+.cat.locked:active i, .cat.locked:active span { transform: scale(1); }
 .cat.locked::after { content: ''; position: absolute; top: 14px; right: 14px; width: 20px; height: 20px; background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%23DAA95B' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='9' width='12' height='8' rx='2'/%3E%3Cpath d='M7 9V6a3 3 0 0 1 6 0v3'/%3E%3C/svg%3E") no-repeat center / contain; }
 .row.drink .thumb[style*="background-image"] { background-color: transparent; background-size: contain; background-repeat: no-repeat; }
 /* Bell + red dot, dynamic-island message pill, notification centre */
@@ -260,8 +278,9 @@ img { display: block; }
 @keyframes bellRing { 0% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } 100% { transform: rotate(0); } }
 
 /* Message pill: 30 px high, centred on the icon row (y = 58). It grows from its centre, closes towards the centre, then flies into the bell. */
-#island { position: absolute; left: 833px; top: 43px; width: 0; height: 30px; opacity: 0; overflow: hidden; white-space: nowrap; display: flex; align-items: center; justify-content: center;
-  border: 1px solid transparent; border-radius: 25px; transform: translateX(-100%); z-index: 60; pointer-events: none; }#island.on { pointer-events: auto; cursor: pointer; }
+#island { position: absolute; left: 0; top: 43px; width: 0; height: 30px; opacity: 0; overflow: hidden; white-space: nowrap; display: flex; align-items: center; justify-content: center;
+  border: 1px solid transparent; border-radius: 10px; transform: translateX(-50%); z-index: 60; pointer-events: none; }
+#island.on { pointer-events: auto; cursor: pointer; }
 #islandTxt { flex: none; padding: 0 14px; font: 400 12px/28px Arial, 'Helvetica Neue', sans-serif; opacity: 0; }
 #island.k-error { border-color: #E25F63; color: #E25F63; background: linear-gradient(rgba(226,95,99,.14), rgba(226,95,99,.14)), #1D1D1D; }
 #island.k-low   { border-color: #DAA95B; color: #DAA95B; background: linear-gradient(rgba(218,169,91,.12), rgba(218,169,91,.12)), #1D1D1D; }
@@ -291,52 +310,89 @@ img { display: block; }
    Tank cards: 215 x 215, two rows of four (y = 268 and 500).
    ========================================================================== */
 #q-size { position: absolute; left: 57px; top: 120px; width: 911px; height: 88px; }
-/* frame 903 x 66 at (61,131) = (4,11) inside the strip; the thumb (182.2 x 66) is slightly wider than a segment slot on purpose */
-.qs-fade { position: absolute; left: 4px; top: 13px; width: 903px; height: 61px; border-radius: 15px; box-shadow: inset -12px 0 15px -6px #1D1D1D; pointer-events: none; }
-.qs-frame { position: absolute; left: 4px; top: 11px; width: 903px; height: 66px; overflow: visible; pointer-events: none; }
-/* background-coloured patch on the stroke under the thumb; slides with the thumb, fades out at both ends */
-.qs-gap { position: absolute; left: 0; top: 7px; height: 74px; pointer-events: none; will-change: transform;
-  background: linear-gradient(90deg, rgba(29,29,29,0) 0, #1D1D1D 16px, #1D1D1D calc(100% - 16px), rgba(29,29,29,0) 100%);
+/* trough: black rim with a 1px gradient stroke (light grey on top, gold towards the bottom-right) around a #1C1C1C recess that has its own gold stroke at the bottom-right */
+.qs-trough { position: absolute; left: 0; top: 1px; width: 911px; height: 76px; box-sizing: border-box; border: 1px solid transparent; border-radius: 60px; pointer-events: none;
+  background: linear-gradient(#000000, #000000) padding-box, radial-gradient(ellipse 200px 90px at 100% 100%, rgba(141, 124, 85, 0.8) 0%, rgba(141, 124, 85, 0) 100%) border-box, linear-gradient(180deg, #5b5b5b 0%, #353535 100%) border-box; }
+.qs-trough::before { content: ''; position: absolute; left: 6px; top: 2px; width: 901px; height: 71px; box-sizing: border-box; border: 1px solid transparent; border-radius: 60px;
+  background: linear-gradient(#1C1C1C, #1C1C1C) padding-box, linear-gradient(115deg, rgba(141, 124, 85, 0) 48%, rgba(141, 124, 85, 0.75) 100%) border-box;
+  box-shadow: inset 0px 0px 45px rgba(0, 0, 0, 0.7), -13px -9px 51.1px rgba(78, 78, 78, 0.39), 15px 29px 50px rgba(0, 0, 0, 0.36); }
+/* sliding thumb: outer pill with a grey stroke, inner face with a grey-to-gold stroke and a fine grain */
+.qs-thumb { position: absolute; left: 9px; top: 11px; width: 178.2px; height: 57px; box-sizing: border-box; border: 1px solid transparent; border-radius: 26.5px; z-index: 1; will-change: transform;
+  background: linear-gradient(#101010, #101010) padding-box, linear-gradient(180deg, #4a4a4a 0%, #2b2b2b 100%) border-box;
+  box-shadow: -5px -4px 7px 1px #131313, 4px 4px 19.3px rgba(0, 0, 0, 0.25), 4px 4px 32px #1B1B1B, 4px 4px 9px #282828;
   transition: transform .5s cubic-bezier(.32,.72,0,1); }
-.qs-thumb { position: absolute; left: 0; top: 11px; width: 182.2px; height: 66px; border-radius: 15px; z-index: 1; will-change: transform;
-  background: #DAA95B; background: linear-gradient(96.02deg, color(display-p3 0.824 0.671 0.404) -9.64%, color(display-p3 0.824 0.671 0.404) 90.53%);
-  box-shadow: inset -5px -7px 6px -3px #443717, inset 2px 2px 4px #DAA95B, inset 3px 6px 19px #7F6A35;
-  transition: transform .5s cubic-bezier(.32,.72,0,1); }
-/* numbers: same easing and duration as the thumb, so the old one fades out and the new one turns dark as the thumb arrives (no flash) */
-.qs-num { position: absolute; top: 0; height: 88px; z-index: 2; text-align: center; font: 400 24px/88px Arial, 'Helvetica Neue', sans-serif;
-  color: rgba(218,169,91,.4); opacity: .5; transition: color .5s cubic-bezier(.32,.72,0,1), opacity .5s cubic-bezier(.32,.72,0,1); }
-.qs-num.on { color: #1C1C1C; opacity: 1; }
+.qs-thumb::before { display: none; }
+.qs-thumb::after { content: ''; position: absolute; left: 3.35px; top: 2px; right: 3.35px; bottom: 2px; box-sizing: border-box; border: 1px solid transparent; border-radius: 26.5px;
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .7 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.16'/%3E%3C/svg%3E") 0 0 / 140px 140px padding-box, linear-gradient(139.5deg, #232323 20.26%, #555555 172.93%) padding-box,
+    radial-gradient(circle 70px at 100% 100%, #8D7C55 0%, rgba(141, 124, 85, 0) 100%) border-box, linear-gradient(180deg, #666666 0%, #3b3b3b 100%) border-box; }
+.qs-num { position: absolute; top: 0; height: 78px; z-index: 2; text-align: center; font: 400 16px/78px Inter, 'Helvetica Neue', Arial, sans-serif;
+  color: #8D7C55; opacity: .5; transition: color .5s cubic-bezier(.32,.72,0,1), opacity .5s cubic-bezier(.32,.72,0,1), font-size .5s cubic-bezier(.32,.72,0,1); }
+.qs-num.on { font-weight: 200; font-size: 18px; color: rgba(255, 255, 255, 0.6); opacity: 1; }
 
-.q-line { position: absolute; left: 57px; top: 238px; width: 911px; height: 0; border-top: 1px solid #8D7C55; border-top: 1px solid color(display-p3 0.541 0.490 0.353); pointer-events: none; }
+/* Quick Mix page: soft vertical sheen over #1D1D1D, and a muted top bar */
+#quick { background: linear-gradient(180deg, rgba(39, 39, 39, 0.2) 0%, rgba(71, 71, 71, 0.2) 100%), #1D1D1D; }
+.bar[data-view="quick"] #btnHome { color: #8D7C55; }
+.bar[data-view="quick"] #barTitle, .bar[data-view="quick"] #btnGear, .bar[data-view="quick"] #btnBell, .bar[data-view="quick"] #wifi { color: rgba(255, 255, 255, 0.6); }
+.q-line { position: absolute; left: 72px; top: 241px; width: 880px; height: 2px; background: rgba(12, 12, 12, 0.5); box-shadow: 0px 0px 0.9px rgba(213, 213, 213, 0.5); pointer-events: none; }   /* engraved groove */
 #q-grid { position: absolute; left: 57px; top: 268px; width: 911px; display: grid; grid-template-columns: repeat(4, 215px); grid-gap: 17px; grid-auto-rows: 215px; }
-.qcard { position: relative; width: 215px; height: 215px; box-sizing: border-box; border-radius: 25px; cursor: pointer; transition: transform .15s;
-  background: linear-gradient(180deg, rgba(141, 124, 85, 0.15) 0%, rgba(29, 29, 29, 0.005) 83.7%);
-  box-shadow: 0px 0px 30px rgba(0, 0, 0, 0.8), inset 0px 0px 50px #181818; }
-.qcard:active { transform: scale(.97); }
-.qcard > *:not(.sq-bg) { position: absolute; left: 33px; display: block; }
-.q-name { top: 27px; width: 149px; height: 22px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 700 18px/22px 'Kannada MN', 'Helvetica Neue', Arial, sans-serif; color: #FFFFFF; }
-.q-tank { top: 56px; width: 100px; height: 11px; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #8D7C55; }
-.q-lvl  { top: 170px; width: 150px; height: 11px; white-space: nowrap; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #F0E6D3; }
-.q-track { top: 188px; width: 150px; height: 4px; background: #424242; }
-.q-fill  { top: 187px; width: 0; height: 6px; border-radius: 3px; background: #DAA95B; transition: width .25s; }
-.q-btn { top: 108px; width: 150px; height: 41px; border-radius: 10px; text-align: center; font: 700 12px/41px Arial, 'Helvetica Neue', sans-serif; color: #1D1D1D;
-  background: #DAA95B; box-shadow: var(--btn-gold-shadow); }
 
-/* Low: still pours, but the bar and the text turn red */
-.qcard.low .q-fill { background: var(--red); }
-.qcard.low .q-lvl  { color: var(--red); }
-/* Empty tank: red card, red line, outlined "Refill" button */
-.qcard.empty > * { opacity: .5; }
-.qcard.empty .q-name, .qcard.empty .q-tank { color: #FFFFFF; }
-.qcard.empty .q-lvl { color: #FF002E; }
-.qcard.empty .q-track { top: 188.5px; height: 3px; background: #FF002E; }
+/* Tank buttons: the card is the BASE (dark recess, soft light/dark shadows, 1px grey ring), ::before is the FACE (gradient + a 1px stroke that is grey on top and gold - red when empty - at the bottom-right),
+   ::after is the LED. While tapped - and for as long as the liquid is pouring - the face shrinks 2 px per side and everything on it compresses a little. */
+.qcard { --accent: #8F7E48; --led: #00CA48; --face-fill: linear-gradient(135.87deg, rgba(0, 0, 0, 0.26) -9.74%, rgba(128, 128, 128, 0.26) 173.91%);
+  --face-stroke: radial-gradient(circle 62px at 100% 100%, var(--accent) 0%, rgba(0, 0, 0, 0) 100%), linear-gradient(180deg, #414141 0%, #2b2b2b 100%);
+  position: relative; width: 215px; height: 215px; box-sizing: border-box; border: 1px solid transparent; border-radius: 25px; cursor: pointer;
+  background: linear-gradient(#101010, #101010) padding-box, linear-gradient(180deg, #484848 0%, #363636 50%, #2c2c2c 100%) border-box;
+  box-shadow: -5px -4px 27px 1px #272727, 4px 4px 19.3px rgba(0, 0, 0, 0.25), 4px 4px 32px #1B1B1B, 4px 4px 9px #282828; }
+.qcard:nth-child(1) { z-index: 8; }
+.qcard:nth-child(2) { z-index: 7; } .qcard:nth-child(3) { z-index: 6; } .qcard:nth-child(4) { z-index: 5; }
+.qcard:nth-child(5) { z-index: 4; --face-fill: linear-gradient(132.13deg, rgba(0, 0, 0, 0.26) -9.64%, rgba(128, 128, 128, 0.26) 300.16%); }   /* tank 5 uses the softer 132deg gradient of the design */ .qcard:nth-child(6) { z-index: 3; } .qcard:nth-child(7) { z-index: 2; } .qcard:nth-child(8) { z-index: 1; }   /* a card never lights up its right / lower neighbour */
+.qcard::before { content: ''; position: absolute; left: 3px; top: 3px; width: 207px; height: 207px; box-sizing: border-box; border: 1px solid transparent; border-radius: 21px;
+  background: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 .7 0 0 0 -.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E") 0 0 / 140px 140px padding-box, var(--face-fill) padding-box, linear-gradient(180deg, #1F1F1F 0%, #252525 100%) padding-box, var(--face-stroke) border-box;
+  transition: left .26s cubic-bezier(.3, 1.45, .5, 1), top .26s cubic-bezier(.3, 1.45, .5, 1), width .26s cubic-bezier(.3, 1.45, .5, 1), height .26s cubic-bezier(.3, 1.45, .5, 1), border-radius .26s ease, box-shadow .26s ease; pointer-events: none; }
+.qcard::after { content: ''; position: absolute; margin: -1px 0 0 -1px; left: 32px; top: 48px; width: 17px; height: 3px; border-radius: 3px; background: var(--led); opacity: .8; box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.4);
+  transform: scale(1); transform-origin: 75.5px 59.5px; transition: transform .26s cubic-bezier(.3, 1.45, .5, 1), background .25s ease, box-shadow .25s ease; pointer-events: none; }
+.qcard > * { position: absolute; margin: -1px 0 0 -1px; left: 32px; display: block; transform: scale(1); transform-origin: 75.5px var(--oy, 0px); transition: transform .26s cubic-bezier(.3, 1.45, .5, 1), color .25s ease; }
+/* pressed (quick, no overshoot): the face gets 2 px smaller on every side and everything on it compresses towards the card centre */
+.q-name { --oy: 45.5px; } .q-tank { --oy: 16.5px; } .q-lvl { --oy: -49.5px; } .q-track { --oy: -71.5px; } .q-fill { --oy: -70.5px; }   /* = card centre (107.5) - own top */
+.qcard:active > *, .qcard.pouring > *, .qcard:active::after, .qcard.pouring::after { transform: scale(.97); }
+.qcard.none:active > * { transform: scale(1); }
+.qcard:active::before, .qcard.pouring::before { left: 5px; top: 5px; width: 203px; height: 203px; border-radius: 19px; box-shadow: inset 0px 1px 7px rgba(0, 0, 0, 0.5), inset 0px 0px 2px rgba(0, 0, 0, 0.45); }
+.qcard:active::before, .qcard.pouring::before, .qcard:active > *, .qcard.pouring > *, .qcard:active::after, .qcard.pouring::after { transition-duration: .09s; transition-timing-function: ease-out; }
+.qcard.pouring::after { opacity: 1; box-shadow: inset 0px 1px 2px rgba(0, 0, 0, 0.4), 0px 0px 7px var(--led); }
+.q-name { top: 62px; width: 151px; height: 22px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font: 400 18px/22px Inter, 'Helvetica Neue', Arial, sans-serif; color: rgba(255, 255, 255, 0.6); text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25); }
+.q-tank { top: 91px; width: 100px; height: 11px; font: 400 10px/11px Arial, 'Helvetica Neue', sans-serif; color: #676767; }
+.q-lvl  { top: 157px; width: 171px; height: 14px; white-space: nowrap; font: 400 12px/14px Arial, 'Helvetica Neue', sans-serif; color: rgba(240, 230, 211, 0.7); }
+.q-lvl::after { content: attr(data-tag); display: inline-block; vertical-align: middle; margin-left: 9px; padding: 2px 6px; border: 1px solid; border-radius: 10px; font: 400 8px/9px Arial, 'Helvetica Neue', sans-serif; }
+.q-lvl[data-tag=""]::after, .q-lvl:not([data-tag])::after { content: none; }
+.q-track { top: 179px; width: 150px; height: 2px; background: rgba(12, 12, 12, 0.5); box-shadow: 0px 0px 0.9px rgba(213, 213, 213, 0.5); }   /* engraved groove */
+.q-fill  { top: 178px; width: 0; height: 4px; border-radius: 4px; background: #8D7C55; transition: width .25s, transform .26s cubic-bezier(.3, 1.45, .5, 1); }
+.q-btn { display: none; }
+
+/* Low level: red bar + "Low Level" tag */
+.qcard.low { --led: #FA4F26; }
+.qcard.low .q-lvl { color: rgba(255, 255, 255, 0.7); }
+.qcard.low .q-lvl::after { color: rgba(250, 79, 38, 0.7); }
+.qcard.low .q-fill { background: #FA4F26; }
+/* Empty tank: red stroke at the bottom-right of the face, "Empty Tank" tag, no bar */
+.qcard.empty { --accent: #7A2937; --led: #FF002E; }
+.qcard.empty .q-lvl { color: rgba(255, 255, 255, 0.7); }
+.qcard.empty .q-lvl::after { color: rgba(255, 0, 46, 0.7); }
 .qcard.empty .q-fill { display: none; }
-.qcard.empty .q-btn { background: transparent; box-shadow: none; border: 1px solid #FF002E; color: #FF002E; font-weight: 400; line-height: 39px; }
-/* No base assigned: grey card, "Select Base" */
-.qcard.none .q-name, .qcard.none .q-tank, .qcard.none .q-lvl { color: #424242; }
+/* Not selected: flat recess (no raised face, no LED), 215 x 207 */
+.qcard.none { height: 207px; margin-top: 4px;
+  background: linear-gradient(#1C1C1C, #1C1C1C) padding-box, linear-gradient(180deg, #3a3a3a 0%, #262626 100%) border-box;
+  box-shadow: inset 0px 0px 15px rgba(0, 0, 0, 0.78), -13px -9px 51.1px rgba(78, 78, 78, 0.39), 15px 29px 50px rgba(0, 0, 0, 0.36); }
+.qcard.none { --led: #373737; }
+.qcard.none::before { display: none; }
+.qcard.none::after { left: 33px; top: 44px; }
+.qcard.none:active::after { transform: scale(1); }
+.qcard.none:active { --dy: 0px; }
+.qcard.none .q-name { top: 58px; left: 33px; color: #676767; text-shadow: none; }
+.qcard.none .q-tank { top: 87px; left: 33px; }
+.qcard.none .q-lvl { top: 153px; color: #676767; }
+.qcard.none .q-track { top: 176px; }
 .qcard.none .q-fill { display: none; }
-.qcard.none .q-btn { background: var(--btn-grey-bg); box-shadow: var(--btn-grey-shadow); }
-.qcard.pouring .q-fill { transition: none; }
+.qcard.pouring .q-fill { transition: transform .26s; }
 
 /* Settings > Quick Mix tab */
 .q-sub { position: absolute; left: 320px; top: 168px; width: 630px; font-size: 12px; line-height: 18px; color: rgba(240,230,211,.6); }
@@ -373,7 +429,7 @@ img { display: block; }
       <symbol id="i-home" viewBox="0 0 15 15"><path d="M5.414 1.07581L1.641 4.01581C1.011 4.50581 0.5 5.54881 0.5 6.33981V11.5268C0.5 13.1508 1.823 14.4808 3.447 14.4808H11.553C13.177 14.4808 14.5 13.1508 14.5 11.5338V6.43781C14.5 5.59081 13.933 4.50581 13.24 4.02281L8.914 0.991809C7.934 0.305809 6.359 0.340809 5.414 1.07581Z" stroke-width="1.125"/><path d="M7.5 11.6807V9.58075" stroke-width="1.125"/></symbol>
       <symbol id="i-wifi" viewBox="0 0 21 16" preserveAspectRatio="none"><path d="M3.40991 7.49C7.70991 4.17 13.2999 4.17 17.5999 7.49" stroke-width="1.2"/><path d="M0.5 4.01C6.56 -0.67 14.44 -0.67 20.5 4.01" stroke-width="1.2"/><path d="M5.29004 11.1401C8.44004 8.70006 12.55 8.70006 15.7 11.1401" stroke-width="1.2"/><path d="M7.90015 14.8C9.48015 13.58 11.5302 13.58 13.1102 14.8" stroke-width="1.2"/></symbol>
       <symbol id="i-gear" viewBox="0 0 16 15" preserveAspectRatio="none"><path d="M7.91624 9.72533C9.14498 9.72533 10.1411 8.72924 10.1411 7.5005C10.1411 6.27176 9.14498 5.27566 7.91624 5.27566C6.6875 5.27566 5.69141 6.27176 5.69141 7.5005C5.69141 8.72924 6.6875 9.72533 7.91624 9.72533Z" stroke-width="1.15"/><path d="M0.5 8.15307V6.84783C0.5 6.07656 1.13037 5.43877 1.90906 5.43877C3.25138 5.43877 3.80017 4.48951 3.12531 3.32518C2.73967 2.65773 2.96957 1.79004 3.64443 1.4044L4.92742 0.670208C5.5133 0.32165 6.26974 0.529302 6.6183 1.11518L6.69987 1.25608C7.36732 2.42041 8.46491 2.42041 9.13978 1.25608L9.22135 1.11518C9.56991 0.529302 10.3264 0.32165 10.9122 0.670208L12.1952 1.4044C12.8701 1.79004 13.1 2.65773 12.7143 3.32518C12.0395 4.48951 12.5883 5.43877 13.9306 5.43877C14.7019 5.43877 15.3397 6.06914 15.3397 6.84783V8.15307C15.3397 8.92435 14.7093 9.56213 13.9306 9.56213C12.5883 9.56213 12.0395 10.5114 12.7143 11.6757C13.1 12.3506 12.8701 13.2109 12.1952 13.5965L10.9122 14.3307C10.3264 14.6793 9.56991 14.4716 9.22135 13.8857L9.13978 13.7448C8.47233 12.5805 7.37474 12.5805 6.69987 13.7448L6.6183 13.8857C6.26974 14.4716 5.5133 14.6793 4.92742 14.3307L3.64443 13.5965C2.96957 13.2109 2.73967 12.3432 3.12531 11.6757C3.80017 10.5114 3.25138 9.56213 1.90906 9.56213C1.13037 9.56213 0.5 8.92435 0.5 8.15307Z" stroke-width="1.15"/></symbol>
-      <symbol id="i-bell" viewBox="2.85 2.05 14.3 16.1"><path d="M10 2.8a4.8 4.8 0 0 0-4.8 4.8v2.6L3.6 13h12.8l-1.6-2.8V7.6A4.8 4.8 0 0 0 10 2.8z" stroke-width="1.23"/><path d="M8 15.4a2 2 0 0 0 4 0" stroke-width="1.23"/></symbol>
+      <symbol id="i-bell" viewBox="0 0 20 20"><path d="M10 1.5a6.2 6.2 0 0 0-6.2 6.2v3.5L2.2 14.6h15.6l-1.6-3.4V7.7A6.2 6.2 0 0 0 10 1.5z" stroke-width="1.5"/><path d="M7.4 16.9a2.8 2.8 0 0 0 5.2 0" stroke-width="1.5"/></symbol>
       <symbol id="i-general" viewBox="0 0 20 20"><path d="M3 5h5M12 5h5M3 10h8M15 10h2M3 15h2M9 15h8"/><circle cx="10" cy="5" r="2"/><circle cx="13" cy="10" r="2"/><circle cx="7" cy="15" r="2"/></symbol>
       <symbol id="i-base" viewBox="0 0 20 20"><path d="M8 2h4M9 2v4L7 9v8a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V9l-2-3V2M7 12h6"/></symbol>
       <symbol id="i-quick" viewBox="0 0 20 20"><path d="M10 2.5S4.5 8.6 4.5 12a5.5 5.5 0 0 0 11 0C15.5 8.6 10 2.5 10 2.5z"/><path d="M8 12.5a2.2 2.2 0 0 0 2 2"/></symbol>
@@ -1270,30 +1326,29 @@ async function playIsland(m) {
   const el = $('#island'), tx = $('#islandTxt'), alarm = m.kind !== 'info';
   el.className = 'k-' + m.kind; tx.textContent = m.text;
   el.style.transition = 'none'; tx.style.transition = 'none';
-  el.style.left = ISL_RIGHT + 'px'; el.style.transform = 'translateX(-100%) scale(1)';
-  el.style.width = 'auto'; el.style.opacity = '0'; tx.style.opacity = '0';
-  const W = Math.max(Math.min(el.offsetWidth, 520), ISL_H);
-  el.style.width = ISL_H + 'px';
+  el.style.left = '0px'; el.style.width = 'auto'; el.style.opacity = '0'; el.style.transform = 'translateX(-50%) scale(1)'; tx.style.opacity = '0';
+  const W = Math.min(el.offsetWidth, 520);
+  el.style.left = (ISL_RIGHT - W / 2) + 'px'; el.style.width = '10px';        // starts as a dot in the middle
   void el.offsetWidth;
-  /* باز شدن از راست به سمت چپ */
-  el.style.transition = 'width .6s ' + ISL_EASE + ', opacity .25s ease'; tx.style.transition = 'opacity .3s ease .2s';
+  /* open: grows from the centre */
+  el.style.transition = 'width .6s ' + ISL_EASE + ', opacity .25s ease'; tx.style.transition = 'opacity .3s ease .25s';
   el.style.width = W + 'px'; el.style.opacity = '1'; tx.style.opacity = '1';
   if (alarm) el.classList.add('on');
   await sleep(m.total);
-  /* جمع شدن از چپ به راست و تبدیل به دایره در فاصله ۲۲ پیکسلی */
+  /* close: both sides move towards the middle */
   tx.style.transition = 'opacity .15s ease'; tx.style.opacity = '0';
   el.style.transition = 'width .45s ' + ISL_EASE; el.style.width = ISL_H + 'px';
   await sleep(450);
   el.classList.remove('on');
-  /* پرواز دایره به داخل زنگوله و لرزش */
-  if (alarm) {
+  if (alarm) {                                                                  // then it flies into the bell
     el.style.transition = 'left .45s cubic-bezier(.55,0,.8,.3), transform .45s cubic-bezier(.55,0,.8,.3), opacity .35s ease .1s';
     el.style.left = BELL_X + 'px'; el.style.transform = 'translateX(-50%) scale(.15)'; el.style.opacity = '0';
     await sleep(450);
     ringBell();
   } else { el.style.transition = 'opacity .25s ease'; el.style.opacity = '0'; await sleep(250); }
-  el.style.transition = 'none'; el.style.left = ISL_RIGHT + 'px'; el.style.transform = 'translateX(-100%)'; el.style.width = '0px'; el.style.opacity = '0';
-}function ringBell() { const b = $('#btnBell'); b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); setTimeout(() => b.classList.remove('ring'), 750); }
+  el.style.transition = 'none'; el.style.width = '0px'; el.style.opacity = '0';
+}
+function ringBell() { const b = $('#btnBell'); b.classList.remove('ring'); void b.offsetWidth; b.classList.add('ring'); setTimeout(() => b.classList.remove('ring'), 750); }
 
 /* Notification centre */
 const tankMsg = (i, st) => st === 'empty' ? `${tankLabel(i)} is empty — please refill` : `${tankLabel(i)} is running low`;
@@ -1399,8 +1454,7 @@ const svgURL = svg => `url("data:image/svg+xml;charset=utf-8,${encodeURIComponen
 
 /* Which elements get which treatment */
 const SQ_PAINT = '.btn, .field input, .select, .row, .chip, #modal .box';   // fill + border redrawn
-const SQ_CARD  = '.cat, .card, .qcard';                                      // gradient, outer + inner shadow
-const SQ_MASK  = '.thumb, .pic';                                             // clip pictures only
+const SQ_MASK  = '.thumb';                                                   // clip pictures only
 
 /* Read the CSS values once, before we neutralise them */
 function sqInit(el) {
@@ -1445,65 +1499,9 @@ function maskBox(el) {
   });
 }
 
-/* CSS gradients blend with premultiplied alpha, SVG gradients do not: build enough stops to get the same result as
-   linear-gradient(180deg, rgba(141,124,85,.15) 0%, rgba(29,29,29,.005) 83.7%) */
-const GLASS_STOPS = (() => {
-  const c0 = [141, 124, 85], a0 = .15, c1 = [29, 29, 29], a1 = .005, N = 16;
-  let out = '';
-  for (let k = 0; k <= N; k++) {
-    const t = k / N, a = a0 + (a1 - a0) * t;
-    const c = c0.map((v, i) => Math.round(((1 - t) * v * a0 + t * c1[i] * a1) / a));
-    out += `<stop offset="${(t * .837).toFixed(4)}" stop-color="rgb(${c})" stop-opacity="${a.toFixed(5)}"/>`;
-  }
-  return out + `<stop offset="1" stop-color="rgb(${c1})" stop-opacity="${a1}"/>`;
-})();
-
-/* Card look (Home, drink and Quick Mix cards): glass gradient, outer shadow, real inner shadow (#181818).
-   Home cards: 20px shadow. Drink and Quick Mix cards: 30px shadow. All: 1px #8A7D5A stroke (except the red / grey Quick Mix states).
-   Quick Mix tank states are set with data-sq-mode: "glass" (normal), "empty" (red fill + red stroke), "none" (grey stroke). */
-let sqId = 0;
-function paintCard(el) {
-  const w = el.offsetWidth, h = el.offsetHeight;
-  if (!w || !h) return;
-  sqInit(el);
-  const mode = el.dataset.sqMode || 'glass';
-  const sig = `${w}|${h}|${mode}`;
-  if (el.dataset.sqSig === sig) return;
-  el.dataset.sqSig = sig;
-  const isCat = el.classList.contains('cat');
-  const stroke = mode === 'empty' ? '#FF002E' : mode === 'none' ? '#424242' : '#8A7D5A';
-  const std = isCat ? 10 : 15;                                                  // blur 20 px -> 10, blur 30 px -> 15
-  /* menu cards live in a scroller: keep the shadow layer inside its padding so it never adds scroll range */
-  const r = +el.dataset.sqR, pad = el.classList.contains('card') ? 30 : 70, id = 'sq' + (++sqId), P = squirclePath(w, h, r);
-  const Pi = squirclePath(w - 2, h - 2, Math.max(0, r - 1)), Ps = squirclePath(w - 1, h - 1, Math.max(0, r - .5));
-  const big = `M${-pad} ${-pad}H${w + pad}V${h + pad}H${-pad}Z`;
-  const IN = 80, bigIn = `M${-IN} ${-IN}H${w + IN}V${h + IN}H${-IN}Z`;       // ring of "outside" that feeds the inner shadow
-  const fillAttr = mode === 'empty' ? 'rgba(255,0,46,.5)' : `url(#${id}g)`;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w + pad * 2}" height="${h + pad * 2}" viewBox="${-pad} ${-pad} ${w + pad * 2} ${h + pad * 2}">` +
-    `<defs>` +
-      `<linearGradient id="${id}g" x1="0" y1="0" x2="0" y2="1">${GLASS_STOPS}</linearGradient>` +
-      `<filter id="${id}o" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="${-pad}" y="${-pad}" width="${w + pad * 2}" height="${h + pad * 2}"><feGaussianBlur stdDeviation="${std}"/></filter>` +
-      `<filter id="${id}n" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB" x="${-IN}" y="${-IN}" width="${w + IN * 2}" height="${h + IN * 2}"><feGaussianBlur stdDeviation="25"/></filter>` +
-      `<clipPath id="${id}x"><path clip-rule="evenodd" d="${big} ${P}"/></clipPath>` +
-      `<clipPath id="${id}c"><path transform="translate(1 1)" d="${Pi}"/></clipPath>` +
-    `</defs>` +
-    `<g clip-path="url(#${id}x)"><path d="${P}" fill="rgba(0,0,0,.8)" filter="url(#${id}o)"/></g>` +        /* outer shadow: 0 0 20/30px rgba(0,0,0,.8) */
-    `<path d="${P}" fill="${fillAttr}"/>` +                                                                 /* gradient (or red fill) */
-    `<g clip-path="url(#${id}c)"><g transform="translate(1 1)"><path fill-rule="evenodd" fill="#181818" filter="url(#${id}n)" d="${bigIn} ${Pi}"/></g></g>` + /* inner shadow: inset 0 0 50px #181818 */
-    (stroke ? `<path transform="translate(.5 .5)" d="${Ps}" fill="none" stroke="${stroke}" stroke-width="1"/>` : '') +
-    `</svg>`;
-  let bg = el.querySelector(':scope > .sq-bg');
-  if (!bg) { bg = document.createElement('div'); bg.className = 'sq-bg'; el.insertBefore(bg, el.firstChild); }
-  bg.style.cssText = `left:${-pad}px;top:${-pad}px;width:${w + pad * 2}px;height:${h + pad * 2}px;`;
-  bg.innerHTML = svg;
-  const s = el.style;
-  s.borderRadius = '0'; s.background = 'none'; s.boxShadow = 'none';
-}
-
 function smooth(root) {
   root = root || stage;
   $$(SQ_PAINT, root).forEach(el => paintBox(el, el.dataset.sqFocus === '1'));
-  $$(SQ_CARD, root).forEach(paintCard);
   $$(SQ_MASK, root).forEach(maskBox);
 }
 
@@ -1590,10 +1588,10 @@ function openMenu(type) {
   $('#barTitle').textContent = MENU_TITLES[type] || 'Menu';
   const list = state.drinks.filter(d => d.type === type);
   $('#menuEmpty').style.display = list.length ? 'none' : 'block';
-  $('#menuScroll').innerHTML = list.map(d => {
+  $('#menuScroll').innerHTML = list.map((d, i) => {
     const meta = [d.abv !== '' && d.abv != null ? `${d.abv}%` : '', d.potency ? `(${d.potency})` : ''].join(' ').trim();
     const na = !!canMake(d);
-    return `<article class="card">
+    return `<article class="card" style="z-index:${list.length - i}">
       <div class="pic" ${picStyle(d)}>${picHTML(d)}</div>
       <h3>${esc(d.name)}</h3>
       <div class="meta">${esc(meta)}</div>
@@ -1720,7 +1718,9 @@ async function orderDrink(d, btn) {
   if (busy) { if (busy.key === btn) stopPour(); else toast('Another drink is being prepared'); return; }
   const problem = canMake(d);
   if (problem) return alertMsg('drink:' + d.id, problem, () => !!canMake(d));
+  const card = btn.closest('.card'); if (card) card.classList.add('pressed');
   const res = await runPour(btn, { id: d.id, name: d.name, cup: d.cup, groups: pourGroups(d) }, p => { btn.textContent = `Stop · ${Math.round(p * 100)}%`; });
+  if (card) card.classList.remove('pressed');
   updateAvailability();                                           // puts the right label back (gold or grey)
   if (res.refused) { if (res.error) toast(res.error); return; }
   toast(res.stopped ? 'Stopped' : res.done ? `Enjoy your ${d.name}!` : 'Drink not completed');
@@ -1729,7 +1729,7 @@ async function orderDrink(d, btn) {
 /* ==========================================================================
    Quick Mix: pick a volume on the strip, then tap a tank card to pour it (tap again to stop)
    ========================================================================== */
-const QS_W = 911, QS_GAP = 16;                    // strip width, margin left open in the stroke on each side of the thumb
+const QS_X = 9, QS_W = 891;                        // the thumb and the numbers start 9 px inside the strip and span 891 px
 
 function openQuick() { if (isLocked('Quick Mix')) { go('home'); return alertMsg('lock', LOCK_MSG, () => !!state.settings.childLock); } $('#barTitle').textContent = 'Quick Mix'; renderQuick(); go('quick'); }
 
@@ -1740,26 +1740,21 @@ function renderQuick() {
   updateQuick();
 }
 
-/* The strip is built once per open / unit / preset change; choosing a volume only moves the thumb and the gold line */
+/* The strip is built once per open / unit / preset change; choosing a volume only moves the thumb */
 function buildPresets() {
   const P = state.quick.presets, n = P.length, w = QS_W / n;
-  const frame = `<svg class="qs-frame" viewBox="0 0 903 66"><defs><linearGradient id="qsG" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="903" y2="0">` +
-    `<stop offset="0" stop-color="#8D7C55"/><stop offset=".3" stop-color="#8D7C55" stop-opacity=".35"/><stop offset=".7" stop-color="#8D7C55" stop-opacity=".35"/><stop offset="1" stop-color="#8D7C55"/></linearGradient></defs>` +
-    `<path transform="translate(.5 .5)" d="${squirclePath(902, 65, 14.5)}" fill="none" stroke="url(#qsG)" stroke-width="1"/></svg>`;
-  $('#q-size').innerHTML = '<div class="qs-fade"></div>' + frame + '<div class="qs-gap"></div><div class="qs-thumb"></div>' +
-    P.map((v, i) => `<button class="qs-num" data-v="${v}" style="left:${f(i * w)}px;width:${f(w)}px">${esc(fmtNum(v))}</button>`).join('');
+  $('#q-size').innerHTML = '<div class="qs-trough"></div><div class="qs-thumb"></div>' +
+    P.map((v, i) => `<button class="qs-num" data-v="${v}" style="left:${f(QS_X + i * w)}px;width:${f(w)}px">${esc(fmtNum(v))}${unit()}</button>`).join('');
   moveThumb(false);
 }
 function moveThumb(animate) {
   const P = state.quick.presets, n = P.length, w = QS_W / n, i = Math.max(0, P.indexOf(state.quick.selected));
-  const th = $('.qs-thumb'), gap = $('.qs-gap'), els = [th, gap];
-  if (!animate) els.forEach(e => { e.style.transition = 'none'; });
+  const th = $('.qs-thumb');
+  if (!animate) th.style.transition = 'none';
   th.style.width = f(w) + 'px';
   th.style.transform = `translateX(${f(i * w)}px)`;
-  gap.style.width = f(w + QS_GAP * 2) + 'px';                 // thumb + a margin on each side, same movement as the thumb
-  gap.style.transform = `translateX(${f(i * w - QS_GAP)}px)`;
   $$('#q-size .qs-num').forEach(b => b.classList.toggle('on', +b.dataset.v === state.quick.selected));
-  if (!animate) { void th.offsetWidth; els.forEach(e => { e.style.transition = ''; }); }
+  if (!animate) { void th.offsetWidth; th.style.transition = ''; }
 }
 
 function updateQuick() {                                     // in place: safe to call while a pour is running
@@ -1767,14 +1762,14 @@ function updateQuick() {                                     // in place: safe t
     const i = +c.dataset.i, t = state.tanks[i], st = tankState(t);
     const pouring = !!(busy && busy.key === 'q' + i);
     c.className = 'qcard ' + (pouring ? 'pouring ' : '') + st;
-    c.dataset.sqMode = st === 'empty' ? 'empty' : st === 'none' ? 'none' : 'glass';
-    $('.q-name', c).textContent = st === 'none' ? 'Empty Tank' : t.base;
-    $('.q-tank', c).textContent = 'Tank ' + (i + 1);
-    $('.q-lvl', c).textContent = st === 'none' ? 'Empty' : st === 'empty' ? 'Empty - refill' : `${fmtLevel(t.level)} ${unit()}` + (st === 'low' ? ' · low' : '');
+    $('.q-name', c).textContent = st === 'none' ? 'Empty' : t.base;
+    $('.q-tank', c).textContent = st === 'none' ? 'Tap to Select' : 'Tank ' + (i + 1);
+    const lvl = $('.q-lvl', c);
+    lvl.textContent = st === 'none' ? `0 ${unit()}` : `${fmtLevel(t.level)} ${unit()}`;
+    lvl.dataset.tag = st === 'low' ? 'Low Level' : st === 'empty' ? 'Empty Tank' : '';
     const pct = pouring ? busy.progress * 100 : (st === 'ok' || st === 'low') && t.capacity ? Math.min(100, t.level / t.capacity * 100) : 0;
     $('.q-fill', c).style.width = f(pct * 1.5) + 'px';
     $('.q-btn', c).textContent = pouring ? `Stop · ${Math.round(busy.progress * 100)}%` : st === 'none' ? 'Select Base' : st === 'empty' ? 'Refill' : 'Choose This!';
-    paintCard(c);
   });
 }
 $('#q-size').addEventListener('click', e => {
