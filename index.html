@@ -79,7 +79,8 @@ img { display: block; }
 #btnGear  { left: 897px; width: 20.75px; height: 19.58px; }
 #btnGear.active { color: var(--gold); }
 #wifi     { position: absolute; left: 939.72px; top: 48px; width: 27.97px; height: 20px; }
-#btnHome, #btnBell, #btnGear, #wifi { color: #EEE6D5; color: color(display-p3 0.9333 0.9020 0.8353); }   /* icon colour from the supplied SVGs */
+#btnHome { color: #8D7C55; color: color(display-p3 0.541 0.490 0.353); }   /* same top bar on every page (as Quick Mix) */
+#btnBell, #btnGear, #wifi { color: rgba(255, 255, 255, 0.6); }
 #btnGear.active { color: var(--gold); }
 #barTitle { position: absolute; left: 97px; top: 46px; white-space: nowrap; font: 300 24px/26px var(--f-head); letter-spacing: .01em; color: rgba(255, 255, 255, 0.6); }
 .bar[data-view="home"] #btnHome, .bar[data-view="home"] #barTitle { display: none; }
@@ -291,11 +292,11 @@ img { display: block; }
 @keyframes bellRing { 0% { transform: rotate(0); } 20% { transform: rotate(14deg); } 40% { transform: rotate(-12deg); } 60% { transform: rotate(8deg); } 80% { transform: rotate(-4deg); } 100% { transform: rotate(0); } }
 
 /* Message pill: 30 px high, centred on the icon row (y = 58). It grows from its centre, closes towards the centre, then flies into the bell. */
-#island { position: absolute; left: 0; top: 43px; width: 0; height: 30px; opacity: 0; overflow: hidden; white-space: nowrap; display: flex; align-items: center; justify-content: center;
-  border: 1px solid transparent; border-radius: 10px; transform: translateX(-50%); z-index: 60; pointer-events: none; }
+#island { position: absolute; left: 0; top: 43px; width: 0; height: 30px; opacity: 0; overflow: hidden; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end;
+  border: 1px solid transparent; border-radius: 20px; transform: translateX(-100%); z-index: 60; pointer-events: none; }
 #island.on { pointer-events: auto; cursor: pointer; }
 #islandTxt { flex: none; padding: 0 14px; font: 400 12px/28px Arial, 'Helvetica Neue', sans-serif; opacity: 0; }
-#island.k-error { border-color: #E25F63; color: #E25F63; background: linear-gradient(rgba(226,95,99,.14), rgba(226,95,99,.14)), #1D1D1D; }
+#island.k-error, #island.k-notice { border-color: #E25F63; color: #E25F63; background: linear-gradient(rgba(226,95,99,.14), rgba(226,95,99,.14)), #1D1D1D; }
 #island.k-low   { border-color: #DAA95B; color: #DAA95B; background: linear-gradient(rgba(218,169,91,.12), rgba(218,169,91,.12)), #1D1D1D; }
 #island.k-info  { border-color: rgba(240,230,211,.95); color: #1D1D1D; background: rgba(240,230,211,.95); }
 
@@ -342,9 +343,6 @@ img { display: block; }
   color: #8D7C55; opacity: .5; transition: color .5s cubic-bezier(.32,.72,0,1), opacity .5s cubic-bezier(.32,.72,0,1), font-size .5s cubic-bezier(.32,.72,0,1); }
 .qs-num.on { font-weight: 200; font-size: 18px; color: rgba(255, 255, 255, 0.6); opacity: 1; }
 
-/* Quick Mix page: soft vertical sheen over #1D1D1D, and a muted top bar */
-.bar[data-view="quick"] #btnHome { color: #8D7C55; }
-.bar[data-view="quick"] #barTitle, .bar[data-view="quick"] #btnGear, .bar[data-view="quick"] #btnBell, .bar[data-view="quick"] #wifi { color: rgba(255, 255, 255, 0.6); }
 .q-line { position: absolute; left: 72px; top: 241px; width: 880px; height: 2px; background: rgba(12, 12, 12, 0.5); box-shadow: 0px 0px 0.9px rgba(213, 213, 213, 0.5); pointer-events: none; }   /* engraved groove */
 #q-grid { position: absolute; left: 57px; top: 268px; width: 911px; display: grid; grid-template-columns: repeat(4, 215px); grid-gap: 17px; grid-auto-rows: 215px; }
 
@@ -1325,6 +1323,7 @@ const islandQ = [];
 let islandBusy = false, devErr = false, notifs = [];
 
 function toast(msg) { enqueue(msg, 'info', 2000); }
+function notice(msg) { enqueue(msg, 'notice', 3000); }   // red pill once, then gone - never stored in the notification centre
 function enqueue(text, kind, total) {
   if (islandQ.some(q => q.text === text && q.kind === kind)) return;
   if (islandQ.length >= 6) islandQ.shift();
@@ -1337,26 +1336,26 @@ async function runIsland() {
   islandBusy = false;
 }
 async function playIsland(m) {
-  const el = $('#island'), tx = $('#islandTxt'), alarm = m.kind !== 'info';
+  const el = $('#island'), tx = $('#islandTxt'), alarm = m.kind === 'error' || m.kind === 'low';   // only these go on into the notification centre
   el.className = 'k-' + m.kind; tx.textContent = m.text;
   el.style.transition = 'none'; tx.style.transition = 'none';
-  el.style.left = '0px'; el.style.width = 'auto'; el.style.opacity = '0'; el.style.transform = 'translateX(-50%) scale(1)'; tx.style.opacity = '0';
+  el.style.left = '0px'; el.style.width = 'auto'; el.style.opacity = '0'; el.style.transform = 'translateX(-100%) scale(1)'; tx.style.opacity = '0';
   const W = Math.min(el.offsetWidth, 520);
-  el.style.left = (ISL_RIGHT - W / 2) + 'px'; el.style.width = '10px';        // starts as a dot in the middle
+  el.style.left = ISL_RIGHT + 'px'; el.style.width = '10px';        // starts as a dot on the right edge
   void el.offsetWidth;
-  /* open: grows from the centre */
+  /* open: grows from the right edge to the left */
   el.style.transition = 'width .6s ' + ISL_EASE + ', opacity .25s ease'; tx.style.transition = 'opacity .3s ease .25s';
   el.style.width = W + 'px'; el.style.opacity = '1'; tx.style.opacity = '1';
   if (alarm) el.classList.add('on');
   await sleep(m.total);
-  /* close: both sides move towards the middle */
+  /* close: shrinks from the left back to the right edge */
   tx.style.transition = 'opacity .15s ease'; tx.style.opacity = '0';
   el.style.transition = 'width .45s ' + ISL_EASE; el.style.width = ISL_H + 'px';
   await sleep(450);
   el.classList.remove('on');
   if (alarm) {                                                                  // then it flies into the bell
     el.style.transition = 'left .45s cubic-bezier(.55,0,.8,.3), transform .45s cubic-bezier(.55,0,.8,.3), opacity .35s ease .1s';
-    el.style.left = BELL_X + 'px'; el.style.transform = 'translateX(-50%) scale(.15)'; el.style.opacity = '0';
+    el.style.left = (BELL_X + ISL_H / 2) + 'px'; el.style.transform = 'translateX(-100%) scale(.15)'; el.style.opacity = '0';
     await sleep(450);
     ringBell();
   } else { el.style.transition = 'opacity .25s ease'; el.style.opacity = '0'; await sleep(250); }
@@ -1608,7 +1607,7 @@ function openMenu(type) {
   if (isLocked(type)) { go('home'); return alertMsg('lock', LOCK_MSG, () => !!state.settings.childLock); }
   menuType = type;
   $('#barTitle').textContent = MENU_TITLES[type] || 'Menu';
-  const list = state.drinks.filter(d => d.type === type);
+  const all = state.drinks.filter(d => d.type === type), list = [...all.filter(d => !canMake(d)), ...all.filter(d => canMake(d))];   // available first
   $('#menuEmpty').style.display = list.length ? 'none' : 'block';
   $('#menuScroll').innerHTML = list.map((d, i) => {
     const meta = [d.abv !== '' && d.abv != null ? `${d.abv}%` : '', d.potency ? `(${d.potency})` : ''].join(' ').trim();
@@ -1739,8 +1738,10 @@ function stopPour() { busy.stop = true; device.send('stop'); }
 
 async function orderDrink(d, btn) {
   if (busy) { if (busy.key === btn) stopPour(); else toast('Another drink is being prepared'); return; }
+  const missing = d.ingredients.find(i => findTank(i.base) < 0);
+  if (missing) return notice(`${d.name} can't be made - "${missing.base}" is not in any tank`);
   const problem = canMake(d);
-  if (problem) return alertMsg('drink:' + d.id, problem, () => !!canMake(d));
+  if (problem) return alertMsg('drink:' + d.id, problem, () => !!canMake(d) && d.ingredients.every(i => findTank(i.base) >= 0));
   const card = btn.closest('.card'); if (card) card.classList.add('pressed');
   const res = await runPour(btn, { id: d.id, name: d.name, cup: d.cup, groups: pourGroups(d) }, p => { btn.textContent = `Stop · ${Math.round(p * 100)}%`; });
   if (card) card.classList.remove('pressed');
@@ -1844,7 +1845,7 @@ $('#q-grid').addEventListener('click', e => { const c = e.target.closest('.qcard
 async function quickPour(i) {
   const t = state.tanks[i], ml = state.quick.selected, key = 'q' + i;
   if (busy) { if (busy.key === key) stopPour(); else toast('Another pour is in progress'); return; }
-  if (!t.base) { openSettings('tanks'); return alertMsg('qbase:' + i, `Tank ${i + 1} has no drink base — choose one and tap Save`, () => !state.tanks[i].base); }
+  if (!t.base) { openSettings('tanks'); return notice(`Tank ${i + 1} is not set up`); }
   if (t.level <= 0) { openSettings('tanks'); return renotifyTank(i); }
   if (t.level < ml) return alertMsg('qvol:' + i, `Only ${fmtLevel(t.level)} ${unit()} left in ${tankLabel(i)} — choose a smaller volume or refill`, () => state.tanks[i].level > 0 && state.tanks[i].level < state.quick.selected);
   const base = t.base;
