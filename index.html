@@ -239,6 +239,16 @@ img { display: block; }
 .row.service { height: 64px; padding: 0 20px 0 26px; justify-content: space-between; }
 .row.service b { display: block; font-size: 14px; margin-bottom: 6px; }
 .row.service small { font-size: 11px; color: rgba(240,230,211,.6); }
+/* Drinks list: Cocktails / Mocktails / Shooters tabs + availability groups */
+.dtabs { position: absolute; left: 320px; top: 170px; width: 630px; display: flex; }
+.dtab { flex: 1; height: 40px; margin-right: 10px; border: 1px solid var(--line); border-radius: 10px; font: 400 13px/38px var(--f-ui); color: var(--cream); transition: border-color .2s, color .2s, background .2s; }
+.dtab:last-child { margin-right: 0; }
+.dtab small { margin-left: 6px; font-size: 11px; opacity: .6; }
+.dtab.on { border-color: var(--gold); color: var(--gold); font-weight: 700; background: rgba(218, 169, 91, 0.08); }
+.d-grp { padding: 2px 4px 9px; font: 700 11px/12px var(--f-ui); letter-spacing: .04em; color: rgba(240, 230, 211, 0.55); }
+.d-grp:not(:first-child) { padding-top: 10px; }
+.row.drink small.ok { color: rgba(240, 230, 211, 0.7); }
+.row.drink small.na { color: var(--red); }
 .ico-btn { width: 36px; height: 36px; display: grid; place-items: center; color: var(--cream); }
 .ico-btn.danger:active { color: var(--red); }
 .chips { display: grid; grid-template-columns: 310px 310px; grid-gap: 10px; gap: 10px; align-content: start; }
@@ -997,7 +1007,8 @@ img { display: block; }
       <div class="ph"><h2>Drinks List</h2>
         <div class="actions"><button class="btn outline-gold" id="d-new">Add Drink</button></div>
       </div>
-      <div class="rows" id="d-list" style="top:173px;height:524px"></div>
+      <div class="dtabs" id="dTabs"><button class="dtab" data-t="Cocktail"></button><button class="dtab" data-t="Mocktail"></button><button class="dtab" data-t="Shooter"></button></div>
+      <div class="rows" id="d-list" style="top:226px;height:471px"></div>
     </div>
 
     <!-- ---- Quick Mix presets ---- -->
@@ -1672,6 +1683,7 @@ function refreshLevels() {
   if (view === 'quick') updateQuick();
   if (view !== 'settings') return;
   if (currentTab === 'tanks') refreshTankCells();
+  if (currentTab === 'drinks') renderDrinks();
   if (currentTab === 'services' && !svcRunning) renderServices();
 }
 function applyStatus(s) {
@@ -1916,17 +1928,30 @@ $('#b-list').addEventListener('click', async e => {
 /* ==========================================================================
    Drinks list
    ========================================================================== */
+let drinkTab = 'Cocktail';
+const TAB_NAMES = { 'Cocktail': 'Cocktails', 'Mocktail': 'Mocktails', 'Shooter': 'Shooters' };
 function renderDrinks() {
-  $('#d-list').innerHTML = state.drinks.map(d => {
-    const meta = d.type || '';                                     // group: Cocktail / Mocktail / Shooter
-    return `<div class="row drink">
+  $$('#dTabs .dtab').forEach(b => {
+    b.classList.toggle('on', b.dataset.t === drinkTab);
+    b.innerHTML = `${TAB_NAMES[b.dataset.t]}<small>${state.drinks.filter(d => d.type === b.dataset.t).length}</small>`;
+  });
+  const row = (d, why) => `<div class="row drink">
       <div class="thumb" ${picStyle(d)}>${picHTML(d)}</div>
-      <div class="info"><b>${esc(d.name)}</b><small>${esc(meta)}</small></div>
+      <div class="info"><b>${esc(d.name)}</b><small class="${why ? 'na' : 'ok'}">${why ? esc(why) : 'Available'}</small></div>
       <button class="ico-btn" data-edit="${d.id}" aria-label="Edit"><svg class="icon"><use href="#i-edit" xlink:href="#i-edit"/></svg></button>
       <button class="ico-btn danger" data-del="${d.id}" aria-label="Delete"><svg class="icon"><use href="#i-trash" xlink:href="#i-trash"/></svg></button>
     </div>`;
-  }).join('');
+  /* smart order: what can be made right now first, then what cannot (with the reason) */
+  const list = state.drinks.filter(d => d.type === drinkTab).map(d => ({ d, why: canMake(d) }));
+  const ok = list.filter(x => !x.why), no = list.filter(x => x.why);
+  const html = (ok.length ? `<div class="d-grp">AVAILABLE · ${ok.length}</div>` + ok.map(x => row(x.d, '')).join('') : '') +
+               (no.length ? `<div class="d-grp">NOT AVAILABLE · ${no.length}</div>` + no.map(x => row(x.d, x.why)).join('') : '') ||
+               '<div class="d-grp">No drinks in this group yet</div>';
+  const el = $('#d-list');
+  if (el.dataset.h === html) return;                         // nothing changed: keep scroll position and avoid flicker
+  const top = el.scrollTop; el.dataset.h = html; el.innerHTML = html; el.scrollTop = top;
 }
+$('#dTabs').addEventListener('click', e => { const b = e.target.closest('.dtab'); if (!b) return; drinkTab = b.dataset.t; $('#d-list').scrollTop = 0; renderDrinks(); });
 $('#d-new').addEventListener('click', () => openDrinkForm());
 $('#d-list').addEventListener('click', async e => {
   const edit = e.target.closest('[data-edit]'), del = e.target.closest('[data-del]');
@@ -1951,7 +1976,7 @@ function openDrinkForm(id) {
   draft = src ? clone(src) : { id: 'd' + Date.now(), ingredients: [], img: null };
   $('#dfTitle').textContent = src ? 'Edit Drink' : 'Add Drink';
 
-  fill(F.type, TYPES, { placeholder: 'Select', value: src ? src.type : undefined });
+  fill(F.type, TYPES, { placeholder: 'Select', value: src ? src.type : drinkTab });
   fill(F.potency, POTENCY, { placeholder: 'Select', value: src ? src.potency : undefined });
   fill(F.ing, state.bases.map(b => b.name), { placeholder: 'Select' });
   fill(F.po, [1, 2, 3, 4, 5, 6, 7, 8], { placeholder: 'Select' });
@@ -2023,7 +2048,7 @@ $('#dfSave').addEventListener('click', () => {
   };
   const i = state.drinks.findIndex(d => d.id === drink.id);
   i >= 0 ? state.drinks[i] = drink : state.drinks.push(drink);
-  persist(); device.send('recipe', drink); toast('Drink saved'); showTab('drinks');
+  persist(); device.send('recipe', drink); toast('Drink saved'); drinkTab = drink.type; showTab('drinks');
 });
 
 /* ==========================================================================
